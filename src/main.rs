@@ -10,9 +10,24 @@ fn main() {
     for component in output {
         match component {
             Component::Char(c) => print!("{}", c),
-            Component::Cwd => {
-                if let Ok(dir) = std::env::current_dir() {
-                    print!("{}", dir.to_string_lossy())
+            Component::Cwd { style } => {
+                match std::env::current_dir() {
+                    Ok(dir) => {
+                        match style {
+                            // Replace the home directory portion of the path with "~/"
+                            component::CwdStyle::Default => {
+                                let home_dir =
+                                    dirs::home_dir().unwrap_or(std::path::PathBuf::new());
+                                match dir.strip_prefix(home_dir) {
+                                    Ok(dir) => print!("~/{}", dir.display()),
+                                    // Unable to strip the prefix, fall back to full path
+                                    Err(_) => print!("{}", dir.display()),
+                                }
+                            }
+                            component::CwdStyle::Long => print!("{}", dir.display()),
+                        }
+                    }
+                    Err(_) => { /* unable to read current directory */ }
                 }
             }
         }
