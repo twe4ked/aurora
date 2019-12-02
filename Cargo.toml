@@ -1,0 +1,8 @@
+[package]
+name = "prompt"
+version = "0.1.0"
+authors = ["Odin Dutton <odindutton@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+nom = "5"
