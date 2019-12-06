@@ -14,9 +14,10 @@ fn cwd(input: &str) -> IResult<&str, Component> {
 
 fn cwd_with_style(input: &str) -> IResult<&str, Component> {
     let (input, _) = tag("{cwd style=")(input)?;
-    let (input, output) = alt((tag("default"), tag("long")))(input)?;
+    let (input, output) = alt((tag("default"), tag("short"), tag("long")))(input)?;
     let style = match output {
         "default" => cwd::CwdStyle::Default,
+        "short" => cwd::CwdStyle::Short,
         "long" => cwd::CwdStyle::Long,
         _ => panic!("invalid style"),
     };
@@ -65,6 +66,12 @@ mod tests {
             parse(&"{cwd style=default}").unwrap().1,
             vec![Component::Cwd {
                 style: cwd::CwdStyle::Default,
+            }]
+        );
+        assert_eq!(
+            parse(&"{cwd style=short}").unwrap().1,
+            vec![Component::Cwd {
+                style: cwd::CwdStyle::Short
             }]
         );
         assert_eq!(
