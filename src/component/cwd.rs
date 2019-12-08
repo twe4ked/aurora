@@ -9,11 +9,13 @@ pub enum CwdStyle {
     Short,
 }
 
-pub fn display(f: &mut fmt::Formatter<'_>, style: &CwdStyle) -> fmt::Result {
-    match std::env::current_dir() {
-        Ok(current_dir) => write!(f, "{}", inner(current_dir, style)),
-        // Unable to read current directory
-        Err(_) => write!(f, ""),
+impl CwdStyle {
+    pub fn display(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match std::env::current_dir() {
+            Ok(current_dir) => write!(f, "{}", inner(current_dir, self)),
+            // Unable to read current directory
+            Err(_) => write!(f, ""),
+        }
     }
 }
 

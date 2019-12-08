@@ -15,7 +15,7 @@ impl fmt::Display for Component {
         match self {
             Component::Char(c) => write!(f, "{}", c),
             Component::Color(color) => color.display(f),
-            Component::Cwd { style } => cwd::display(f, style),
+            Component::Cwd { style } => style.display(f),
         }
     }
 }
