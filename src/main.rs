@@ -2,6 +2,8 @@ mod component;
 mod error;
 mod parser;
 
+use component::Component;
+
 const DEFAULT_CONFIG: &str = "{cwd} $ ";
 
 fn main() {
@@ -36,6 +38,12 @@ fn prompt(args: Vec<String>) {
     let output = parser::parse(&config).unwrap().1;
 
     for component in output {
-        print!("{}", component);
+        let component = match component {
+            Component::Char(c) => component::character::display(&c),
+            Component::Color(color) => color.display(),
+            Component::Cwd { style } => style.display(),
+        };
+
+        print!("{}", component.unwrap_or(String::new()))
     }
 }
