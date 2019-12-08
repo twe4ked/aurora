@@ -1,5 +1,4 @@
-use crate::component::cwd;
-use crate::component::Component;
+use crate::component::{color, cwd, Component};
 use nom::branch::alt;
 use nom::bytes::complete::tag;
 use nom::character::complete::anychar;
@@ -35,8 +34,41 @@ fn any_char(input: &str) -> IResult<&str, Component> {
     Ok((input, Component::Char(output)))
 }
 
+fn color(input: &str) -> IResult<&str, Component> {
+    use color::Color::*;
+
+    let (input, _) = tag("{")(input)?;
+    let (input, output) = alt((
+        tag("black"),
+        tag("blue"),
+        tag("green"),
+        tag("red"),
+        tag("cyan"),
+        tag("magenta"),
+        tag("yellow"),
+        tag("white"),
+        tag("reset"),
+    ))(input)?;
+    let (input, _) = tag("}")(input)?;
+
+    let color = match output {
+        "black" => Black,
+        "blue" => Blue,
+        "green" => Green,
+        "red" => Red,
+        "cyan" => Cyan,
+        "magenta" => Magenta,
+        "yellow" => Yellow,
+        "white" => White,
+        "reset" => Reset,
+        _ => unreachable!(),
+    };
+
+    Ok((input, Component::Color(color)))
+}
+
 pub fn parse(input: &str) -> IResult<&str, Vec<Component>> {
-    many0(alt((expression, any_char)))(input)
+    many0(alt((expression, color, any_char)))(input)
 }
 
 #[cfg(test)]

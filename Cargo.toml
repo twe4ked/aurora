@@ -8,3 +8,4 @@ edition = "2018"
 nom = "5"
 dirs = "2"
 git2 = "0.10"
+crossterm = { version = "0.12", default-features = false, features = ["style"] }
