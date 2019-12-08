@@ -1,6 +1,6 @@
+use crate::error::Error;
 use crossterm::Color as CrosstermColor;
 use crossterm::Colored;
-use std::fmt;
 
 #[derive(Debug, PartialEq)]
 pub enum Color {
@@ -16,7 +16,7 @@ pub enum Color {
 }
 
 impl Color {
-    pub fn display(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    pub fn display(&self) -> Result<String, Error> {
         let color = match self {
             Color::Black => CrosstermColor::Black,
             Color::Blue => CrosstermColor::Blue,
@@ -28,6 +28,6 @@ impl Color {
             Color::White => CrosstermColor::White,
             Color::Reset => CrosstermColor::Reset,
         };
-        write!(f, "{}", Colored::Fg(color))
+        Ok(format!("{}", Colored::Fg(color)))
     }
 }

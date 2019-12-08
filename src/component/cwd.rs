@@ -1,5 +1,5 @@
+use crate::error::Error;
 use git2::Repository;
-use std::fmt;
 use std::path::{Path, PathBuf};
 
 #[derive(Debug, PartialEq)]
@@ -10,12 +10,12 @@ pub enum CwdStyle {
 }
 
 impl CwdStyle {
-    pub fn display(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match std::env::current_dir() {
-            Ok(current_dir) => write!(f, "{}", inner(current_dir, self)),
+    pub fn display(&self) -> Result<String, Error> {
+        Ok(match std::env::current_dir() {
+            Ok(current_dir) => format!("{}", inner(current_dir, self)),
             // Unable to read current directory
-            Err(_) => write!(f, ""),
-        }
+            Err(_) => String::new(),
+        })
     }
 }
 

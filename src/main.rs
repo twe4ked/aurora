@@ -1,4 +1,5 @@
 mod component;
+mod error;
 mod parser;
 
 const DEFAULT_CONFIG: &str = "{cwd} $ ";
