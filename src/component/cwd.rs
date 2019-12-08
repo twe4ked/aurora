@@ -11,11 +11,7 @@ pub enum CwdStyle {
 
 impl CwdStyle {
     pub fn display(&self) -> Result<String, Error> {
-        Ok(match std::env::current_dir() {
-            Ok(current_dir) => format!("{}", inner(current_dir, self)),
-            // Unable to read current directory
-            Err(_) => String::new(),
-        })
+        Ok(format!("{}", inner(std::env::current_dir()?, self)))
     }
 }
 
