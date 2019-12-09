@@ -67,8 +67,13 @@ fn color(input: &str) -> IResult<&str, Component> {
     Ok((input, Component::Color(color)))
 }
 
+fn git_branch(input: &str) -> IResult<&str, Component> {
+    let (input, _) = tag("{git_branch}")(input)?;
+    Ok((input, Component::GitBranch))
+}
+
 pub fn parse(input: &str) -> IResult<&str, Vec<Component>> {
-    many0(alt((expression, color, any_char)))(input)
+    many0(alt((expression, color, git_branch, any_char)))(input)
 }
 
 #[cfg(test)]

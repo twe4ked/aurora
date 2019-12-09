@@ -8,7 +8,7 @@ use component::Component;
 use current_dir::CurrentDir;
 use git_repo::GitRepo;
 
-const DEFAULT_CONFIG: &str = "{cwd} $ ";
+const DEFAULT_CONFIG: &str = "{cwd} {git_branch} $ ";
 
 fn main() {
     let args: Vec<_> = std::env::args().collect();
@@ -48,6 +48,7 @@ fn prompt(args: Vec<String>) {
             Component::Char(c) => component::character::display(&c),
             Component::Color(color) => color.display(),
             Component::Cwd { style } => style.display(&current_dir, &git_repo),
+            Component::GitBranch => component::git_branch::display(&git_repo),
         };
 
         print!("{}", component.unwrap_or(String::new()))
