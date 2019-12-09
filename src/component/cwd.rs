@@ -77,7 +77,7 @@ mod tests {
         let home_dir = PathBuf::from("/home/foo");
 
         assert_eq!(
-            replace_home_dir(current_dir, home_dir),
+            replace_home_dir(&current_dir, home_dir),
             "~/bar/baz".to_string()
         );
     }
