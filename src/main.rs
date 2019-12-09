@@ -1,8 +1,10 @@
 mod component;
+mod current_dir;
 mod error;
 mod parser;
 
 use component::Component;
+use current_dir::CurrentDir;
 
 const DEFAULT_CONFIG: &str = "{cwd} $ ";
 
@@ -36,12 +38,13 @@ fn prompt(args: Vec<String>) {
     let default = DEFAULT_CONFIG.to_string();
     let config = args.get(1).unwrap_or(&default);
     let output = parser::parse(&config).unwrap().1;
+    let current_dir = CurrentDir::new();
 
     for component in output {
         let component = match component {
             Component::Char(c) => component::character::display(&c),
             Component::Color(color) => color.display(),
-            Component::Cwd { style } => style.display(),
+            Component::Cwd { style } => style.display(&current_dir),
         };
 
         print!("{}", component.unwrap_or(String::new()))

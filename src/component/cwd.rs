@@ -1,3 +1,4 @@
+use crate::current_dir::CurrentDir;
 use crate::error::Error;
 use git2::Repository;
 use std::path::{Path, PathBuf};
@@ -10,12 +11,12 @@ pub enum CwdStyle {
 }
 
 impl CwdStyle {
-    pub fn display(&self) -> Result<String, Error> {
-        Ok(format!("{}", inner(std::env::current_dir()?, self)))
+    pub fn display(&self, current_dir: &CurrentDir) -> Result<String, Error> {
+        Ok(format!("{}", inner(current_dir.get(), self)))
     }
 }
 
-fn inner(current_dir: PathBuf, style: &CwdStyle) -> String {
+fn inner(current_dir: &PathBuf, style: &CwdStyle) -> String {
     match style {
         CwdStyle::Default => {
             let home_dir = dirs::home_dir().unwrap_or(PathBuf::new());
@@ -34,7 +35,7 @@ fn inner(current_dir: PathBuf, style: &CwdStyle) -> String {
 }
 
 /// Replace the home directory portion of the path with "~/"
-fn replace_home_dir(current_dir: PathBuf, home_dir: PathBuf) -> String {
+fn replace_home_dir(current_dir: &PathBuf, home_dir: PathBuf) -> String {
     match current_dir.strip_prefix(home_dir) {
         Ok(current_dir) => format!("~/{}", current_dir.display()),
         // Unable to strip the prefix, fall back to full path
