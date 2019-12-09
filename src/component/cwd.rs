@@ -1,6 +1,6 @@
 use crate::current_dir::CurrentDir;
 use crate::error::Error;
-use git2::Repository;
+use crate::git_repo::GitRepo;
 use std::path::{Path, PathBuf};
 
 #[derive(Debug, PartialEq)]
@@ -11,12 +11,12 @@ pub enum CwdStyle {
 }
 
 impl CwdStyle {
-    pub fn display(&self, current_dir: &CurrentDir) -> Result<String, Error> {
-        Ok(format!("{}", inner(current_dir.get(), self)))
+    pub fn display(&self, current_dir: &CurrentDir, git_repo: &GitRepo) -> Result<String, Error> {
+        Ok(format!("{}", inner(current_dir.get(), git_repo, self)))
     }
 }
 
-fn inner(current_dir: &PathBuf, style: &CwdStyle) -> String {
+fn inner(current_dir: &PathBuf, git_repo: &GitRepo, style: &CwdStyle) -> String {
     match style {
         CwdStyle::Default => {
             let home_dir = dirs::home_dir().unwrap_or(PathBuf::new());
@@ -24,10 +24,10 @@ fn inner(current_dir: &PathBuf, style: &CwdStyle) -> String {
         }
         CwdStyle::Short => {
             let home_dir = dirs::home_dir().unwrap_or(PathBuf::new());
-            match Repository::discover(&current_dir) {
-                Ok(git_root) => short(&current_dir, &home_dir, git_root.path()),
+            match git_repo.root() {
+                Some(git_root) => short(&current_dir, &home_dir, git_root),
                 // TODO: We want to contract up to the current dir if we don't have a git root.
-                Err(_) => replace_home_dir(current_dir, home_dir),
+                None => replace_home_dir(current_dir, home_dir),
             }
         }
         CwdStyle::Long => format!("{}", current_dir.display()),
