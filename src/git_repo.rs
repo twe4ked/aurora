@@ -6,7 +6,7 @@ use std::path::PathBuf;
 
 pub struct GitRepo<'a> {
     current_dir: &'a CurrentDir,
-    root: OnceCell<Option<PathBuf>>,
+    root: OnceCell<PathBuf>,
     repository: OnceCell<Repository>,
 }
 
@@ -19,13 +19,10 @@ impl<'a> GitRepo<'a> {
         }
     }
 
-    pub fn root(&self) -> Option<&PathBuf> {
-        self.root
-            .get_or_init(|| match self.repository() {
-                Ok(repo) => Some(repo.path().to_path_buf()),
-                Err(_) => None,
-            })
-            .as_ref()
+    pub fn root(&self) -> Result<&PathBuf, Error> {
+        self.root.get_or_try_init(|| -> Result<PathBuf, Error> {
+            Ok(self.repository()?.path().to_path_buf())
+        })
     }
 
     pub fn repository(&self) -> Result<&Repository, Error> {
