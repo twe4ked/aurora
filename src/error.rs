@@ -4,7 +4,6 @@ use std::io;
 #[derive(Debug)]
 pub enum Error {
     IoError(io::Error),
-    UnableToFetchRepositoy,
     GitError(git2::Error),
 }
 
