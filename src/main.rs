@@ -50,6 +50,7 @@ fn prompt(args: Vec<String>) {
             Component::Cwd { style } => style.display(&current_dir, &git_repo),
             Component::GitBranch => component::git_branch::display(&git_repo),
             Component::GitCommit => component::git_commit::display(&git_repo),
+            Component::GitStash => component::git_stash::display(&current_dir),
         };
 
         print!("{}", component.unwrap_or(String::new()))

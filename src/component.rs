@@ -3,6 +3,7 @@ pub mod color;
 pub mod cwd;
 pub mod git_branch;
 pub mod git_commit;
+pub mod git_stash;
 
 #[derive(Debug, PartialEq)]
 pub enum Component {
@@ -11,4 +12,5 @@ pub enum Component {
     Cwd { style: cwd::CwdStyle },
     GitBranch,
     GitCommit,
+    GitStash,
 }

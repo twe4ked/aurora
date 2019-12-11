@@ -77,8 +77,15 @@ fn git_commit(input: &str) -> IResult<&str, Component> {
     Ok((input, Component::GitCommit))
 }
 
+fn git_stash(input: &str) -> IResult<&str, Component> {
+    let (input, _) = tag("{git_stash}")(input)?;
+    Ok((input, Component::GitStash))
+}
+
 pub fn parse(input: &str) -> IResult<&str, Vec<Component>> {
-    many0(alt((expression, color, git_branch, git_commit, any_char)))(input)
+    many0(alt((
+        expression, color, git_branch, git_commit, git_stash, any_char,
+    )))(input)
 }
 
 #[cfg(test)]
