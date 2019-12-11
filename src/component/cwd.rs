@@ -13,13 +13,13 @@ impl CwdStyle {
     pub fn display(
         &self,
         current_dir: &PathBuf,
-        repository: Option<&mut Repository>,
+        repository: Option<&Repository>,
     ) -> Result<String, Error> {
         Ok(format!("{}", inner(current_dir, repository, self)))
     }
 }
 
-fn inner(current_dir: &PathBuf, repository: Option<&mut Repository>, style: &CwdStyle) -> String {
+fn inner(current_dir: &PathBuf, repository: Option<&Repository>, style: &CwdStyle) -> String {
     match style {
         CwdStyle::Default => {
             let home_dir = dirs::home_dir().unwrap_or(PathBuf::new());

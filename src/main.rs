@@ -48,9 +48,9 @@ fn prompt(args: Vec<String>) {
         let component = match component {
             Component::Char(c) => component::character::display(&c),
             Component::Color(color) => color.display(),
-            Component::Cwd { style } => style.display(&current_dir, git_repository.as_mut()),
-            Component::GitBranch => component::git_branch::display(git_repository.as_mut()),
-            Component::GitCommit => component::git_commit::display(git_repository.as_mut()),
+            Component::Cwd { style } => style.display(&current_dir, git_repository.as_ref()),
+            Component::GitBranch => component::git_branch::display(git_repository.as_ref()),
+            Component::GitCommit => component::git_commit::display(git_repository.as_ref()),
             Component::GitStash => component::git_stash::display(git_repository.as_mut()),
         };
 

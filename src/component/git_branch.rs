@@ -1,7 +1,7 @@
 use crate::error::Error;
 use git2::Repository;
 
-pub fn display(repository: Option<&mut Repository>) -> Result<String, Error> {
+pub fn display(repository: Option<&Repository>) -> Result<String, Error> {
     if repository.is_none() {
         return Ok(String::new());
     }
