@@ -1,4 +1,3 @@
-use crate::current_dir::CurrentDir;
 use crate::error::Error;
 use git2::Repository;
 use std::path::{Path, PathBuf};
@@ -13,10 +12,10 @@ pub enum CwdStyle {
 impl CwdStyle {
     pub fn display(
         &self,
-        current_dir: &CurrentDir,
+        current_dir: &PathBuf,
         repository: Option<&mut Repository>,
     ) -> Result<String, Error> {
-        Ok(format!("{}", inner(current_dir.get(), repository, self)))
+        Ok(format!("{}", inner(current_dir, repository, self)))
     }
 }
 

@@ -1,10 +1,8 @@
 mod component;
-mod current_dir;
 mod error;
 mod parser;
 
 use component::Component;
-use current_dir::CurrentDir;
 use git2::Repository;
 
 const DEFAULT_CONFIG: &str = "{cwd} {git_branch} $ ";
@@ -39,7 +37,9 @@ fn prompt(args: Vec<String>) {
     let default = DEFAULT_CONFIG.to_string();
     let config = args.get(1).unwrap_or(&default);
     let output = parser::parse(&config).unwrap().1;
-    let current_dir = CurrentDir::new();
+
+    // TODO: Don't get current_dir if it's not needed.
+    let current_dir = std::env::current_dir().expect("unable to get current dir");
 
     // TODO: Don't try to discover repository if nothing relies on it.
     let mut git_repository = Repository::discover(&current_dir).ok();
