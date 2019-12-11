@@ -1,6 +1,5 @@
 use crate::error::Error;
-use crossterm::Color as CrosstermColor;
-use crossterm::Colored;
+use crossterm::style::{Color as CrosstermColor, ResetColor, SetForegroundColor};
 
 #[derive(Debug, PartialEq)]
 pub enum Color {
@@ -17,6 +16,10 @@ pub enum Color {
 
 impl Color {
     pub fn display(&self) -> Result<String, Error> {
+        if self == &Color::Reset {
+            return Ok(format!("{}", ResetColor));
+        }
+
         let color = match self {
             Color::Black => CrosstermColor::Black,
             Color::Blue => CrosstermColor::Blue,
@@ -26,8 +29,8 @@ impl Color {
             Color::Magenta => CrosstermColor::Magenta,
             Color::Yellow => CrosstermColor::Yellow,
             Color::White => CrosstermColor::White,
-            Color::Reset => CrosstermColor::Reset,
+            Color::Reset => unreachable!(),
         };
-        Ok(format!("{}", Colored::Fg(color)))
+        Ok(format!("{}", SetForegroundColor(color)))
     }
 }
