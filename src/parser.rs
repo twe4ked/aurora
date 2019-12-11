@@ -72,8 +72,13 @@ fn git_branch(input: &str) -> IResult<&str, Component> {
     Ok((input, Component::GitBranch))
 }
 
+fn git_commit(input: &str) -> IResult<&str, Component> {
+    let (input, _) = tag("{git_commit}")(input)?;
+    Ok((input, Component::GitCommit))
+}
+
 pub fn parse(input: &str) -> IResult<&str, Vec<Component>> {
-    many0(alt((expression, color, git_branch, any_char)))(input)
+    many0(alt((expression, color, git_branch, git_commit, any_char)))(input)
 }
 
 #[cfg(test)]

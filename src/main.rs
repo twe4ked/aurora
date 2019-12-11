@@ -49,6 +49,7 @@ fn prompt(args: Vec<String>) {
             Component::Color(color) => color.display(),
             Component::Cwd { style } => style.display(&current_dir, &git_repo),
             Component::GitBranch => component::git_branch::display(&git_repo),
+            Component::GitCommit => component::git_commit::display(&git_repo),
         };
 
         print!("{}", component.unwrap_or(String::new()))
