@@ -1,12 +1,11 @@
 mod component;
 mod current_dir;
 mod error;
-mod git_repo;
 mod parser;
 
 use component::Component;
 use current_dir::CurrentDir;
-use git_repo::GitRepo;
+use git2::Repository;
 
 const DEFAULT_CONFIG: &str = "{cwd} {git_branch} $ ";
 
@@ -41,16 +40,18 @@ fn prompt(args: Vec<String>) {
     let config = args.get(1).unwrap_or(&default);
     let output = parser::parse(&config).unwrap().1;
     let current_dir = CurrentDir::new();
-    let git_repo = GitRepo::new(&current_dir);
+
+    // TODO: Don't try to discover repository if nothing relies on it.
+    let mut git_repository = Repository::discover(&current_dir).ok();
 
     for component in output {
         let component = match component {
             Component::Char(c) => component::character::display(&c),
             Component::Color(color) => color.display(),
-            Component::Cwd { style } => style.display(&current_dir, &git_repo),
-            Component::GitBranch => component::git_branch::display(&git_repo),
-            Component::GitCommit => component::git_commit::display(&git_repo),
-            Component::GitStash => component::git_stash::display(&current_dir),
+            Component::Cwd { style } => style.display(&current_dir, git_repository.as_mut()),
+            Component::GitBranch => component::git_branch::display(git_repository.as_mut()),
+            Component::GitCommit => component::git_commit::display(git_repository.as_mut()),
+            Component::GitStash => component::git_stash::display(git_repository.as_mut()),
         };
 
         print!("{}", component.unwrap_or(String::new()))

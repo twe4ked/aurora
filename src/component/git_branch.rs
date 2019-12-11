@@ -1,8 +1,11 @@
 use crate::error::Error;
-use crate::git_repo::GitRepo;
+use git2::Repository;
 
-pub fn display(git_repo: &GitRepo) -> Result<String, Error> {
-    let head = git_repo.repository()?.head()?;
+pub fn display(repository: Option<&mut Repository>) -> Result<String, Error> {
+    if repository.is_none() {
+        return Ok(String::new());
+    }
+    let head = repository.unwrap().head()?;
     let shorthand = head.shorthand();
     Ok(shorthand
         .map(std::string::ToString::to_string)
