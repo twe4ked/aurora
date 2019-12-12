@@ -7,10 +7,10 @@ pub mod git_stash;
 
 #[derive(Debug, PartialEq)]
 pub enum Component {
-    Char(char),
-    Color(color::Color),
-    Cwd { style: cwd::CwdStyle },
-    GitBranch,
-    GitCommit,
-    GitStash,
+    Char(Option<String>),
+    Color(Option<String>),
+    Cwd(Option<String>),
+    GitBranch(Option<String>),
+    GitCommit(Option<String>),
+    GitStash(Option<String>),
 }

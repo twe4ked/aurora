@@ -44,16 +44,28 @@ fn prompt(args: Vec<String>) {
     // TODO: Don't try to discover repository if nothing relies on it.
     let mut git_repository = Repository::discover(&current_dir).ok();
 
-    for component in output {
-        let component = match component {
-            Component::Char(c) => component::character::display(&c),
-            Component::Color(color) => color.display(),
-            Component::Cwd { style } => style.display(&current_dir, git_repository.as_ref()),
-            Component::GitBranch => component::git_branch::display(git_repository.as_ref()),
-            Component::GitCommit => component::git_commit::display(git_repository.as_ref()),
-            Component::GitStash => component::git_stash::display(git_repository.as_mut()),
-        };
+    let components = output
+        .iter()
+        .map(|component| match component {
+            parser::Component::Char(c) => component::character::display(&c),
+            parser::Component::Color(color) => color.display(),
+            parser::Component::Cwd { style } => {
+                style.display(&current_dir, git_repository.as_ref())
+            }
+            parser::Component::GitBranch => component::git_branch::display(git_repository.as_ref()),
+            parser::Component::GitCommit => component::git_commit::display(git_repository.as_ref()),
+            parser::Component::GitStash => component::git_stash::display(git_repository.as_mut()),
+        })
+        .map(|component| match component {
+            Component::Char(component)
+            | Component::Color(component)
+            | Component::Cwd(component)
+            | Component::GitBranch(component)
+            | Component::GitCommit(component)
+            | Component::GitStash(component) => component,
+        });
 
+    for component in components {
         print!("{}", component.unwrap_or(String::new()))
     }
 }
