@@ -1,4 +1,4 @@
-use crate::component::{color, cwd};
+use crate::component::cwd;
 use nom::branch::alt;
 use nom::bytes::complete::tag;
 use nom::character::complete::anychar;
@@ -6,9 +6,22 @@ use nom::multi::many0;
 use nom::IResult;
 
 #[derive(Debug, PartialEq)]
+pub enum Color {
+    Black,
+    Blue,
+    Green,
+    Red,
+    Cyan,
+    Magenta,
+    Yellow,
+    White,
+    Reset,
+}
+
+#[derive(Debug, PartialEq)]
 pub enum Component {
     Char(char),
-    Color(color::Color),
+    Color(Color),
     Cwd { style: cwd::CwdStyle },
     GitBranch,
     GitCommit,
@@ -45,7 +58,7 @@ fn any_char(input: &str) -> IResult<&str, Component> {
 }
 
 fn color(input: &str) -> IResult<&str, Component> {
-    use color::Color::*;
+    use Color::*;
 
     let (input, _) = tag("{")(input)?;
     let (input, output) = alt((

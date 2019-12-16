@@ -2,7 +2,7 @@ mod component;
 mod error;
 mod parser;
 
-use component::{ColorStartReset, Component};
+use component::Component;
 use git2::Repository;
 
 const DEFAULT_CONFIG: &str = "{cwd} {git_branch} $ ";
@@ -48,7 +48,7 @@ fn prompt(args: Vec<String>) {
         .iter()
         .map(|component| match component {
             parser::Component::Char(c) => component::character::display(&c),
-            parser::Component::Color(color) => color.display(),
+            parser::Component::Color(color) => component::color::display(&color),
             parser::Component::Cwd { style } => {
                 style.display(&current_dir, git_repository.as_ref())
             }
@@ -77,7 +77,16 @@ fn squash(components: Vec<Component>) -> Vec<String> {
                 group.push(component);
             }
 
-            Component::Color(ColorStartReset::Start(_c)) => {
+            Component::Color(component::color::Color::Reset(_c)) => {
+                // End group
+                group = filter(group);
+
+                group.push(component);
+                ret.append(&mut components_to_string(&group));
+                group = Vec::new();
+            }
+
+            Component::Color(_c) => {
                 group.push(component);
 
                 // If we're already in a group, let's end the current one, and start a new one.
@@ -85,15 +94,6 @@ fn squash(components: Vec<Component>) -> Vec<String> {
                     ret.append(&mut components_to_string(&group));
                     group = Vec::new();
                 }
-            }
-
-            Component::Color(ColorStartReset::Reset(_c)) => {
-                // End group
-                group = filter(group);
-
-                group.push(component);
-                ret.append(&mut components_to_string(&group));
-                group = Vec::new();
             }
 
             Component::Cwd(_)
@@ -151,8 +151,15 @@ fn components_to_string(group: &Vec<Component>) -> Vec<String> {
         .into_iter()
         .filter_map(|c| match c {
             Component::Char(c)
-            | Component::Color(ColorStartReset::Start(c))
-            | Component::Color(ColorStartReset::Reset(c))
+            | Component::Color(component::color::Color::Black(c))
+            | Component::Color(component::color::Color::Blue(c))
+            | Component::Color(component::color::Color::Green(c))
+            | Component::Color(component::color::Color::Red(c))
+            | Component::Color(component::color::Color::Cyan(c))
+            | Component::Color(component::color::Color::Magenta(c))
+            | Component::Color(component::color::Color::Yellow(c))
+            | Component::Color(component::color::Color::White(c))
+            | Component::Color(component::color::Color::Reset(c))
             | Component::Cwd(c)
             | Component::GitBranch(c)
             | Component::GitCommit(c)
@@ -165,7 +172,7 @@ fn components_to_string(group: &Vec<Component>) -> Vec<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::component::ColorStartReset;
+    use crate::component::color::Color;
 
     #[test]
     fn test_squash_keep_1() {
@@ -174,15 +181,15 @@ mod tests {
             Component::Char("a keep".to_string()),
             Component::Cwd("b keep".to_string()),
             // Group 2 (Squash)
-            Component::Color(ColorStartReset::Start("red".to_string())),
+            Component::Color(Color::Red("red".to_string())),
             Component::Empty,
             Component::Char("c squash".to_string()),
-            Component::Color(ColorStartReset::Reset("reset".to_string())),
+            Component::Color(Color::Reset("reset".to_string())),
             // Group 3
-            Component::Color(ColorStartReset::Start("green".to_string())),
+            Component::Color(Color::Green("green".to_string())),
             Component::Char("d keep".to_string()),
             // Group 4
-            Component::Color(ColorStartReset::Start("blue".to_string())),
+            Component::Color(Color::Blue("blue".to_string())),
             Component::Char("e keep".to_string()),
             Component::Cwd("f keep".to_string()),
         ];
@@ -208,7 +215,7 @@ mod tests {
             Component::Char("a keep".to_string()),
             Component::Cwd("b keep".to_string()),
             // Group 2
-            Component::Color(ColorStartReset::Start("blue".to_string())),
+            Component::Color(Color::Blue("blue".to_string())),
             Component::Char("c squash".to_string()),
             Component::Empty,
         ];
@@ -232,14 +239,14 @@ mod tests {
     fn test_filter_just_char_ignores_color() {
         assert_eq!(
             filter(vec![
-                Component::Color(ColorStartReset::Start("green".to_string())),
+                Component::Color(Color::Green("green".to_string())),
                 Component::Char("a keep".to_string()),
-                Component::Color(ColorStartReset::Reset("reset".to_string())),
+                Component::Color(Color::Reset("reset".to_string())),
             ]),
             vec![
-                Component::Color(ColorStartReset::Start("green".to_string())),
+                Component::Color(Color::Green("green".to_string())),
                 Component::Char("a keep".to_string()),
-                Component::Color(ColorStartReset::Reset("reset".to_string())),
+                Component::Color(Color::Reset("reset".to_string())),
             ]
         );
     }
@@ -262,16 +269,16 @@ mod tests {
     fn test_filter_char_and_cwd_ignores_color() {
         assert_eq!(
             filter(vec![
-                Component::Color(ColorStartReset::Start("green".to_string())),
+                Component::Color(Color::Green("green".to_string())),
                 Component::Char("a keep".to_string()),
                 Component::Cwd("b keep".to_string()),
-                Component::Color(ColorStartReset::Reset("reset".to_string())),
+                Component::Color(Color::Reset("reset".to_string())),
             ]),
             vec![
-                Component::Color(ColorStartReset::Start("green".to_string())),
+                Component::Color(Color::Green("green".to_string())),
                 Component::Char("a keep".to_string()),
                 Component::Cwd("b keep".to_string()),
-                Component::Color(ColorStartReset::Reset("reset".to_string())),
+                Component::Color(Color::Reset("reset".to_string())),
             ]
         );
     }
@@ -291,14 +298,14 @@ mod tests {
     fn test_filter_char_and_empty_ignores_color() {
         assert_eq!(
             filter(vec![
-                Component::Color(ColorStartReset::Start("green".to_string())),
+                Component::Color(Color::Green("green".to_string())),
                 Component::Char("a keep".to_string()),
                 Component::Empty,
-                Component::Color(ColorStartReset::Reset("reset".to_string())),
+                Component::Color(Color::Reset("reset".to_string())),
             ]),
             vec![
-                Component::Color(ColorStartReset::Start("green".to_string())),
-                Component::Color(ColorStartReset::Reset("reset".to_string())),
+                Component::Color(Color::Green("green".to_string())),
+                Component::Color(Color::Reset("reset".to_string())),
             ]
         );
     }
@@ -307,18 +314,18 @@ mod tests {
     fn test_filter_char_cwd_and_empty() {
         assert_eq!(
             filter(vec![
-                Component::Color(ColorStartReset::Start("green".to_string())),
+                Component::Color(Color::Green("green".to_string())),
                 Component::Char("a keep".to_string()),
                 Component::Cwd("b keep".to_string()),
                 Component::Empty,
-                Component::Color(ColorStartReset::Reset("reset".to_string())),
+                Component::Color(Color::Reset("reset".to_string())),
             ]),
             vec![
-                Component::Color(ColorStartReset::Start("green".to_string())),
+                Component::Color(Color::Green("green".to_string())),
                 Component::Char("a keep".to_string()),
                 Component::Cwd("b keep".to_string()),
                 Component::Empty,
-                Component::Color(ColorStartReset::Reset("reset".to_string())),
+                Component::Color(Color::Reset("reset".to_string())),
             ]
         );
     }
