@@ -1,5 +1,4 @@
-use crate::component::Component;
-use crate::error::Error;
+use crate::component::{ColorStartReset, Component};
 use crossterm::style::{Color as CrosstermColor, ResetColor, SetForegroundColor};
 use std::fmt::Display;
 
@@ -19,7 +18,9 @@ pub enum Color {
 impl Color {
     pub fn display(&self) -> Component {
         if self == &Color::Reset {
-            return Component::Color(Some(wrap_in_zsh_no_change_cursor_position(ResetColor)));
+            return Component::Color(ColorStartReset::Reset(
+                wrap_in_zsh_no_change_cursor_position(ResetColor),
+            ));
         }
 
         let color = match self {
@@ -34,9 +35,9 @@ impl Color {
             Color::Reset => unreachable!(),
         };
 
-        Component::Color(Some(wrap_in_zsh_no_change_cursor_position(
-            SetForegroundColor(color),
-        )))
+        Component::Color(ColorStartReset::Start(
+            wrap_in_zsh_no_change_cursor_position(SetForegroundColor(color)),
+        ))
     }
 }
 
@@ -57,9 +58,10 @@ mod tests {
 
     #[test]
     fn display_green() {
-        assert_eq!(
-            format!("{}", Color::Green.display().unwrap()),
-            "%{\u{1b}[38;5;10m%}".to_string()
-        );
+        if let Component::Color(ColorStartReset::Start(green)) = Color::Green.display() {
+            assert_eq!(format!("{}", green), "%{\u{1b}[38;5;10m%}".to_string());
+        } else {
+            unreachable!();
+        }
     }
 }

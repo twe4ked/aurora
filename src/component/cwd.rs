@@ -1,5 +1,4 @@
 use crate::component::Component;
-use crate::error::Error;
 use git2::Repository;
 use std::path::{Path, PathBuf};
 
@@ -12,7 +11,7 @@ pub enum CwdStyle {
 
 impl CwdStyle {
     pub fn display(&self, current_dir: &PathBuf, repository: Option<&Repository>) -> Component {
-        Component::Cwd(Some(format!("{}", inner(current_dir, repository, self))))
+        Component::Cwd(format!("{}", inner(current_dir, repository, self)))
     }
 }
 

@@ -1,17 +1,17 @@
 use crate::component::Component;
-use crate::error::Error;
 use git2::Repository;
 
 pub fn display(repository: Option<&Repository>) -> Component {
     if repository.is_none() {
-        return Component::GitBranch(None);
+        return Component::Empty;
     }
     let head = repository.unwrap().head();
     if head.is_err() {
-        return Component::GitBranch(None);
+        return Component::Empty;
     }
     let head = head.unwrap();
-    let shorthand = head.shorthand();
-    let x = shorthand.map(std::string::ToString::to_string);
-    Component::GitBranch(x)
+    match head.shorthand() {
+        Some(shorthand) => Component::GitBranch(shorthand.to_string()),
+        None => Component::Empty,
+    }
 }
