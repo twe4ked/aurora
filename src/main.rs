@@ -44,6 +44,7 @@ fn prompt(args: Vec<String>) {
     // TODO: Don't try to discover repository if nothing relies on it.
     let mut git_repository = Repository::discover(&current_dir).ok();
 
+    // Generate a Component with an optional finished String.
     let components = output
         .iter()
         .map(|component| match component {
@@ -58,8 +59,10 @@ fn prompt(args: Vec<String>) {
         })
         .collect();
 
+    // Squash any characters we don't need where a component has returned ::Empty.
     let components = squash(components);
 
+    // Print components.
     for component in components {
         print!("{}", component);
     }
