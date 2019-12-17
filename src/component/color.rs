@@ -4,15 +4,8 @@ use crossterm::style::{Color as CrosstermColor, ResetColor, SetForegroundColor};
 use std::fmt::Display;
 
 #[derive(Debug, PartialEq)]
-pub enum Color {
-    Black(String),
-    Blue(String),
-    Green(String),
-    Red(String),
-    Cyan(String),
-    Magenta(String),
-    Yellow(String),
-    White(String),
+pub enum Style {
+    Color(String),
     Reset(String),
 }
 
@@ -34,26 +27,14 @@ impl std::convert::From<&static_component::Color> for CrosstermColor {
 
 pub fn display(static_component_color: &static_component::Color) -> Component {
     if static_component_color == &static_component::Color::Reset {
-        return Component::Color(Color::Reset(wrap_in_zsh_no_change_cursor_position(
+        return Component::Color(Style::Reset(wrap_in_zsh_no_change_cursor_position(
             ResetColor,
         )));
     }
 
     let crossterm_color = CrosstermColor::from(static_component_color);
 
-    let color = match crossterm_color {
-        CrosstermColor::Black => Color::Black,
-        CrosstermColor::Blue => Color::Blue,
-        CrosstermColor::Green => Color::Green,
-        CrosstermColor::Red => Color::Red,
-        CrosstermColor::Cyan => Color::Cyan,
-        CrosstermColor::Magenta => Color::Magenta,
-        CrosstermColor::Yellow => Color::Yellow,
-        CrosstermColor::White => Color::White,
-        _ => unreachable!(),
-    };
-
-    Component::Color(color(wrap_in_zsh_no_change_cursor_position(
+    Component::Color(Style::Color(wrap_in_zsh_no_change_cursor_position(
         SetForegroundColor(crossterm_color),
     )))
 }
@@ -75,7 +56,7 @@ mod tests {
 
     #[test]
     fn display_green() {
-        if let Component::Color(Color::Green(green)) = display(&static_component::Color::Green) {
+        if let Component::Color(Style::Color(green)) = display(&static_component::Color::Green) {
             assert_eq!(format!("{}", green), "%{\u{1b}[38;5;10m%}".to_string());
         } else {
             unreachable!();
