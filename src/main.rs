@@ -50,7 +50,7 @@ fn prompt(args: Vec<String>) {
             parser::Component::Char(c) => component::character::display(&c),
             parser::Component::Color(color) => component::color::display(&color),
             parser::Component::Cwd { style } => {
-                style.display(&current_dir, git_repository.as_ref())
+                component::cwd::display(&style, &current_dir, git_repository.as_ref())
             }
             parser::Component::GitBranch => component::git_branch::display(git_repository.as_ref()),
             parser::Component::GitCommit => component::git_commit::display(git_repository.as_ref()),

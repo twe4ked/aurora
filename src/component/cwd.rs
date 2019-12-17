@@ -9,28 +9,30 @@ pub enum CwdStyle {
     Short,
 }
 
-impl CwdStyle {
-    pub fn display(&self, current_dir: &PathBuf, repository: Option<&Repository>) -> Component {
-        let output = match self {
-            CwdStyle::Default => {
-                let home_dir = dirs::home_dir().unwrap_or(PathBuf::new());
-                replace_home_dir(current_dir, home_dir)
-            }
-            CwdStyle::Short => {
-                let home_dir = dirs::home_dir().unwrap_or(PathBuf::new());
-                match repository {
-                    Some(repository) => {
-                        short(&current_dir, &home_dir, &repository.path().to_path_buf())
-                    }
-                    // TODO: We want to contract up to the current dir if we don't have a git root.
-                    None => replace_home_dir(current_dir, home_dir),
+pub fn display(
+    style: &CwdStyle,
+    current_dir: &PathBuf,
+    repository: Option<&Repository>,
+) -> Component {
+    let output = match style {
+        CwdStyle::Default => {
+            let home_dir = dirs::home_dir().unwrap_or(PathBuf::new());
+            replace_home_dir(current_dir, home_dir)
+        }
+        CwdStyle::Short => {
+            let home_dir = dirs::home_dir().unwrap_or(PathBuf::new());
+            match repository {
+                Some(repository) => {
+                    short(&current_dir, &home_dir, &repository.path().to_path_buf())
                 }
+                // TODO: We want to contract up to the current dir if we don't have a git root.
+                None => replace_home_dir(current_dir, home_dir),
             }
-            CwdStyle::Long => format!("{}", current_dir.display()),
-        };
+        }
+        CwdStyle::Long => format!("{}", current_dir.display()),
+    };
 
-        Component::Cwd(format!("{}", output))
-    }
+    Component::Cwd(format!("{}", output))
 }
 
 /// Replace the home directory portion of the path with "~/"
