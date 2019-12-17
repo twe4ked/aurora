@@ -5,6 +5,7 @@ use std::io;
 pub enum Error {
     IoError(io::Error),
     GitError(git2::Error),
+    StripPrefixError,
 }
 
 impl From<io::Error> for Error {
@@ -16,5 +17,11 @@ impl From<io::Error> for Error {
 impl From<git2::Error> for Error {
     fn from(error: git2::Error) -> Self {
         Error::GitError(error)
+    }
+}
+
+impl From<std::path::StripPrefixError> for Error {
+    fn from(_: std::path::StripPrefixError) -> Self {
+        Error::StripPrefixError
     }
 }

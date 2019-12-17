@@ -1,4 +1,5 @@
 use crate::component::Component;
+use crate::error::Error;
 use git2::Repository;
 use std::path::{Path, PathBuf};
 
@@ -14,7 +15,15 @@ pub fn display(
     current_dir: &PathBuf,
     repository: Option<&Repository>,
 ) -> Component {
-    let output = match style {
+    Component::Cwd(cwd(style, current_dir, repository).unwrap_or(long(current_dir).unwrap()))
+}
+
+fn cwd(
+    style: &CwdStyle,
+    current_dir: &PathBuf,
+    repository: Option<&Repository>,
+) -> Result<String, Error> {
+    match style {
         CwdStyle::Default => {
             let home_dir = dirs::home_dir().unwrap_or(PathBuf::new());
             replace_home_dir(current_dir, home_dir)
@@ -29,53 +38,50 @@ pub fn display(
                 None => replace_home_dir(current_dir, home_dir),
             }
         }
-        CwdStyle::Long => format!("{}", current_dir.display()),
-    };
-
-    Component::Cwd(format!("{}", output))
+        CwdStyle::Long => long(current_dir),
+    }
 }
 
 /// Replace the home directory portion of the path with "~/"
-fn replace_home_dir(current_dir: &PathBuf, home_dir: PathBuf) -> String {
+fn replace_home_dir(current_dir: &PathBuf, home_dir: PathBuf) -> Result<String, Error> {
     if current_dir == &home_dir {
-        return "~".to_string();
+        return Ok("~".to_string());
     }
-
-    match current_dir.strip_prefix(home_dir) {
-        Ok(current_dir) => format!("~/{}", current_dir.display()),
-        // Unable to strip the prefix, fall back to full path
-        Err(_) => format!("{}", current_dir.display()),
-    }
+    Ok(format!(
+        "~/{}",
+        current_dir.strip_prefix(home_dir)?.display()
+    ))
 }
 
-fn short(current_dir: &PathBuf, home_dir: &PathBuf, git_root: &Path) -> String {
-    match current_dir.strip_prefix(&home_dir) {
-        Ok(current_dir) => {
-            // Remove repo/.git
-            let git_root = git_root.parent().unwrap().parent().unwrap();
-            // Remove the home_dir from the git_root.
-            let git_root = git_root
-                .strip_prefix(&home_dir)
-                .expect("unable to remove home dir");
+fn short(current_dir: &PathBuf, home_dir: &PathBuf, git_root: &Path) -> Result<String, Error> {
+    let current_dir = current_dir.strip_prefix(&home_dir)?;
 
-            let short_repo = git_root.iter().fold(PathBuf::new(), |acc, part| {
-                acc.join(format!("{}", part.to_string_lossy().chars().nth(0).unwrap()).as_str())
-            });
+    // Remove repo/.git
+    let git_root = git_root.parent().unwrap().parent().unwrap();
 
-            let rest = current_dir
-                .strip_prefix(&git_root)
-                .expect("unable to remove non-home-dir git_root from dir");
+    // Remove the home_dir from the git_root.
+    let git_root = git_root
+        .strip_prefix(&home_dir)
+        .expect("unable to remove home dir");
 
-            let mut output = PathBuf::new();
-            output.push(&home_dir);
-            output.push(short_repo);
-            output.push(rest);
+    let short_repo = git_root.iter().fold(PathBuf::new(), |acc, part| {
+        acc.join(format!("{}", part.to_string_lossy().chars().nth(0).unwrap()).as_str())
+    });
 
-            replace_home_dir(&output, home_dir.to_path_buf())
-        }
-        // Unable to strip the prefix, fall back to full path
-        Err(_) => format!("{}", current_dir.display()),
-    }
+    let rest = current_dir
+        .strip_prefix(&git_root)
+        .expect("unable to remove non-home-dir git_root from dir");
+
+    let mut output = PathBuf::new();
+    output.push(&home_dir);
+    output.push(short_repo);
+    output.push(rest);
+
+    Ok(replace_home_dir(&output, home_dir.to_path_buf())?)
+}
+
+fn long(current_dir: &PathBuf) -> Result<String, Error> {
+    Ok(format!("{}", current_dir.display()))
 }
 
 #[cfg(test)]
@@ -88,7 +94,7 @@ mod tests {
         let home_dir = PathBuf::from("/home/foo");
 
         assert_eq!(
-            replace_home_dir(&current_dir, home_dir),
+            replace_home_dir(&current_dir, home_dir).unwrap(),
             "~/bar/baz".to_string()
         );
     }
@@ -98,7 +104,10 @@ mod tests {
         let current_dir = PathBuf::from("/home/foo");
         let home_dir = PathBuf::from("/home/foo");
 
-        assert_eq!(replace_home_dir(&current_dir, home_dir), "~".to_string());
+        assert_eq!(
+            replace_home_dir(&current_dir, home_dir).unwrap(),
+            "~".to_string()
+        );
     }
 
     #[test]
@@ -108,13 +117,13 @@ mod tests {
         let git_root = Path::new("/home/foo/axx/bxx/repo/.git");
 
         assert_eq!(
-            short(&current_dir, &home_dir, &git_root),
+            short(&current_dir, &home_dir, &git_root).unwrap(),
             "~/a/b/repo/cxx/dxx".to_string()
         );
 
         let current_dir = PathBuf::from("/home/foo/axx/bxx/repo");
         assert_eq!(
-            short(&current_dir, &home_dir, &git_root),
+            short(&current_dir, &home_dir, &git_root).unwrap(),
             "~/a/b/repo".to_string()
         );
     }
@@ -126,7 +135,7 @@ mod tests {
         let git_root = Path::new("/home/foo/axx/.git");
 
         assert_eq!(
-            short(&current_dir, &home_dir, &git_root),
+            short(&current_dir, &home_dir, &git_root).unwrap(),
             "~/axx".to_string()
         );
     }
