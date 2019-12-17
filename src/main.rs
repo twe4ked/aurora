@@ -1,6 +1,7 @@
 mod component;
 mod error;
 mod parser;
+mod static_component;
 
 use git2::Repository;
 
@@ -47,14 +48,20 @@ fn prompt(args: Vec<String>) {
     let components = output
         .iter()
         .map(|component| match component {
-            parser::Component::Char(c) => component::character::display(&c),
-            parser::Component::Color(color) => component::color::display(&color),
-            parser::Component::Cwd { style } => {
+            static_component::Component::Char(c) => component::character::display(&c),
+            static_component::Component::Color(color) => component::color::display(&color),
+            static_component::Component::Cwd { style } => {
                 component::cwd::display(&style, &current_dir, git_repository.as_ref())
             }
-            parser::Component::GitBranch => component::git_branch::display(git_repository.as_ref()),
-            parser::Component::GitCommit => component::git_commit::display(git_repository.as_ref()),
-            parser::Component::GitStash => component::git_stash::display(git_repository.as_mut()),
+            static_component::Component::GitBranch => {
+                component::git_branch::display(git_repository.as_ref())
+            }
+            static_component::Component::GitCommit => {
+                component::git_commit::display(git_repository.as_ref())
+            }
+            static_component::Component::GitStash => {
+                component::git_stash::display(git_repository.as_mut())
+            }
         })
         .collect();
 

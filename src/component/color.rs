@@ -1,5 +1,5 @@
 use crate::component::Component;
-use crate::parser;
+use crate::static_component;
 use crossterm::style::{Color as CrosstermColor, ResetColor, SetForegroundColor};
 use std::fmt::Display;
 
@@ -16,30 +16,30 @@ pub enum Color {
     Reset(String),
 }
 
-impl std::convert::From<&parser::Color> for CrosstermColor {
-    fn from(parser_color: &parser::Color) -> Self {
-        match parser_color {
-            parser::Color::Black => CrosstermColor::Black,
-            parser::Color::Blue => CrosstermColor::Blue,
-            parser::Color::Green => CrosstermColor::Green,
-            parser::Color::Red => CrosstermColor::Red,
-            parser::Color::Cyan => CrosstermColor::Cyan,
-            parser::Color::Magenta => CrosstermColor::Magenta,
-            parser::Color::Yellow => CrosstermColor::Yellow,
-            parser::Color::White => CrosstermColor::White,
-            parser::Color::Reset => unreachable!(),
+impl std::convert::From<&static_component::Color> for CrosstermColor {
+    fn from(static_component_color: &static_component::Color) -> Self {
+        match static_component_color {
+            static_component::Color::Black => CrosstermColor::Black,
+            static_component::Color::Blue => CrosstermColor::Blue,
+            static_component::Color::Green => CrosstermColor::Green,
+            static_component::Color::Red => CrosstermColor::Red,
+            static_component::Color::Cyan => CrosstermColor::Cyan,
+            static_component::Color::Magenta => CrosstermColor::Magenta,
+            static_component::Color::Yellow => CrosstermColor::Yellow,
+            static_component::Color::White => CrosstermColor::White,
+            static_component::Color::Reset => unreachable!(),
         }
     }
 }
 
-pub fn display(parser_color: &parser::Color) -> Component {
-    if parser_color == &parser::Color::Reset {
+pub fn display(static_component_color: &static_component::Color) -> Component {
+    if static_component_color == &static_component::Color::Reset {
         return Component::Color(Color::Reset(wrap_in_zsh_no_change_cursor_position(
             ResetColor,
         )));
     }
 
-    let crossterm_color = CrosstermColor::from(parser_color);
+    let crossterm_color = CrosstermColor::from(static_component_color);
 
     let color = match crossterm_color {
         CrosstermColor::Black => Color::Black,
@@ -75,7 +75,7 @@ mod tests {
 
     #[test]
     fn display_green() {
-        if let Component::Color(Color::Green(green)) = display(&parser::Color::Green) {
+        if let Component::Color(Color::Green(green)) = display(&static_component::Color::Green) {
             assert_eq!(format!("{}", green), "%{\u{1b}[38;5;10m%}".to_string());
         } else {
             unreachable!();

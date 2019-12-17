@@ -1,32 +1,10 @@
 use crate::component::cwd;
+use crate::static_component::{Color, Component};
 use nom::branch::alt;
 use nom::bytes::complete::tag;
 use nom::character::complete::anychar;
 use nom::multi::many0;
 use nom::IResult;
-
-#[derive(Debug, PartialEq)]
-pub enum Color {
-    Black,
-    Blue,
-    Green,
-    Red,
-    Cyan,
-    Magenta,
-    Yellow,
-    White,
-    Reset,
-}
-
-#[derive(Debug, PartialEq)]
-pub enum Component {
-    Char(char),
-    Color(Color),
-    Cwd { style: cwd::CwdStyle },
-    GitBranch,
-    GitCommit,
-    GitStash,
-}
 
 fn cwd(input: &str) -> IResult<&str, Component> {
     let (input, _) = tag("{cwd}")(input)?;
