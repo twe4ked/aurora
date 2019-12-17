@@ -49,7 +49,7 @@ fn prompt(args: Vec<String>) {
         .iter()
         .map(|component| match component {
             static_component::Component::Char(c) => component::character::display(&c),
-            static_component::Component::Color(color) => component::color::display(&color),
+            static_component::Component::Style(style) => component::style::display(&style),
             static_component::Component::Cwd { style } => {
                 component::cwd::display(&style, &current_dir, git_repository.as_ref())
             }

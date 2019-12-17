@@ -1,5 +1,5 @@
 use crate::component::cwd;
-use crate::static_component::{Color, Component};
+use crate::static_component::{Component, Style};
 use nom::branch::alt;
 use nom::bytes::complete::tag;
 use nom::character::complete::anychar;
@@ -35,8 +35,8 @@ fn any_char(input: &str) -> IResult<&str, Component> {
     Ok((input, Component::Char(output)))
 }
 
-fn color(input: &str) -> IResult<&str, Component> {
-    use Color::*;
+fn style(input: &str) -> IResult<&str, Component> {
+    use Style::*;
 
     let (input, _) = tag("{")(input)?;
     let (input, output) = alt((
@@ -52,7 +52,7 @@ fn color(input: &str) -> IResult<&str, Component> {
     ))(input)?;
     let (input, _) = tag("}")(input)?;
 
-    let color = match output {
+    let style = match output {
         "black" => Black,
         "blue" => Blue,
         "green" => Green,
@@ -65,7 +65,7 @@ fn color(input: &str) -> IResult<&str, Component> {
         _ => unreachable!(),
     };
 
-    Ok((input, Component::Color(color)))
+    Ok((input, Component::Style(style)))
 }
 
 fn git_branch(input: &str) -> IResult<&str, Component> {
@@ -85,7 +85,7 @@ fn git_stash(input: &str) -> IResult<&str, Component> {
 
 pub fn parse(input: &str) -> IResult<&str, Vec<Component>> {
     many0(alt((
-        expression, color, git_branch, git_commit, git_stash, any_char,
+        expression, style, git_branch, git_commit, git_stash, any_char,
     )))(input)
 }
 

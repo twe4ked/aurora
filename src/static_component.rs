@@ -3,7 +3,7 @@
 use crate::component::cwd;
 
 #[derive(Debug, PartialEq)]
-pub enum Color {
+pub enum Style {
     Black,
     Blue,
     Green,
@@ -18,7 +18,7 @@ pub enum Color {
 #[derive(Debug, PartialEq)]
 pub enum Component {
     Char(char),
-    Color(Color),
+    Style(Style),
     Cwd { style: cwd::CwdStyle },
     GitBranch,
     GitCommit,
