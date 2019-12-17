@@ -58,7 +58,7 @@ fn short(current_dir: &PathBuf, home_dir: &PathBuf, git_root: &Path) -> String {
                 .strip_prefix(&home_dir)
                 .expect("unable to remove home dir");
 
-            let mut short_repo = git_root.iter().fold(PathBuf::new(), |acc, part| {
+            let short_repo = git_root.iter().fold(PathBuf::new(), |acc, part| {
                 acc.join(format!("{}", part.to_string_lossy().chars().nth(0).unwrap()).as_str())
             });
 
@@ -66,9 +66,12 @@ fn short(current_dir: &PathBuf, home_dir: &PathBuf, git_root: &Path) -> String {
                 .strip_prefix(&git_root)
                 .expect("unable to remove non-home-dir git_root from dir");
 
-            short_repo.push(rest);
+            let mut output = PathBuf::new();
+            output.push(&home_dir);
+            output.push(short_repo);
+            output.push(rest);
 
-            format!("~/{}", short_repo.display())
+            replace_home_dir(&output, home_dir.to_path_buf())
         }
         // Unable to strip the prefix, fall back to full path
         Err(_) => format!("{}", current_dir.display()),
