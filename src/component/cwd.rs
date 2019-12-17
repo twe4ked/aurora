@@ -37,6 +37,10 @@ fn inner(current_dir: &PathBuf, repository: Option<&Repository>, style: &CwdStyl
 
 /// Replace the home directory portion of the path with "~/"
 fn replace_home_dir(current_dir: &PathBuf, home_dir: PathBuf) -> String {
+    if current_dir == &home_dir {
+        return "~".to_string();
+    }
+
     match current_dir.strip_prefix(home_dir) {
         Ok(current_dir) => format!("~/{}", current_dir.display()),
         // Unable to strip the prefix, fall back to full path
@@ -81,6 +85,14 @@ mod tests {
             replace_home_dir(&current_dir, home_dir),
             "~/bar/baz".to_string()
         );
+    }
+
+    #[test]
+    fn test_replace_home_dir_in_home_dir() {
+        let current_dir = PathBuf::from("/home/foo");
+        let home_dir = PathBuf::from("/home/foo");
+
+        assert_eq!(replace_home_dir(&current_dir, home_dir), "~".to_string());
     }
 
     #[test]
