@@ -61,13 +61,29 @@ fn prompt(args: Vec<String>) {
     let components = squash(components);
 
     for component in components {
-        print!("{}", component);
+        match component {
+            Component::Char(c)
+            | Component::Color(component::color::Color::Black(c))
+            | Component::Color(component::color::Color::Blue(c))
+            | Component::Color(component::color::Color::Green(c))
+            | Component::Color(component::color::Color::Red(c))
+            | Component::Color(component::color::Color::Cyan(c))
+            | Component::Color(component::color::Color::Magenta(c))
+            | Component::Color(component::color::Color::Yellow(c))
+            | Component::Color(component::color::Color::White(c))
+            | Component::Color(component::color::Color::Reset(c))
+            | Component::Cwd(c)
+            | Component::GitBranch(c)
+            | Component::GitCommit(c)
+            | Component::GitStash(c) => print!("{}", c),
+            Component::Empty => (),
+        }
     }
 }
 
 // A group is something between a Color and a ColorReset OR between a Squash and a Normal(Some(_))
-fn squash(components: Vec<Component>) -> Vec<String> {
-    let mut ret: Vec<String> = Vec::new();
+fn squash(components: Vec<Component>) -> Vec<Component> {
+    let mut ret: Vec<Component> = Vec::new();
     let mut group: Vec<Component> = Vec::new();
 
     for component in components {
@@ -82,7 +98,7 @@ fn squash(components: Vec<Component>) -> Vec<String> {
                 group = filter(group);
 
                 group.push(component);
-                ret.append(&mut components_to_string(&group));
+                ret.append(&mut group);
                 group = Vec::new();
             }
 
@@ -91,7 +107,7 @@ fn squash(components: Vec<Component>) -> Vec<String> {
 
                 // If we're already in a group, let's end the current one, and start a new one.
                 if !group.is_empty() {
-                    ret.append(&mut components_to_string(&group));
+                    ret.append(&mut group);
                     group = Vec::new();
                 }
             }
@@ -107,7 +123,7 @@ fn squash(components: Vec<Component>) -> Vec<String> {
     }
 
     group = filter(group);
-    ret.append(&mut components_to_string(&group));
+    ret.append(&mut group);
     ret
 }
 
@@ -146,29 +162,6 @@ fn filter(group: Vec<Component>) -> Vec<Component> {
     }
 }
 
-fn components_to_string(group: &Vec<Component>) -> Vec<String> {
-    group
-        .into_iter()
-        .filter_map(|c| match c {
-            Component::Char(c)
-            | Component::Color(component::color::Color::Black(c))
-            | Component::Color(component::color::Color::Blue(c))
-            | Component::Color(component::color::Color::Green(c))
-            | Component::Color(component::color::Color::Red(c))
-            | Component::Color(component::color::Color::Cyan(c))
-            | Component::Color(component::color::Color::Magenta(c))
-            | Component::Color(component::color::Color::Yellow(c))
-            | Component::Color(component::color::Color::White(c))
-            | Component::Color(component::color::Color::Reset(c))
-            | Component::Cwd(c)
-            | Component::GitBranch(c)
-            | Component::GitCommit(c)
-            | Component::GitStash(c) => Some(c.clone()),
-            _ => None,
-        })
-        .collect()
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -193,19 +186,24 @@ mod tests {
             Component::Char("e keep".to_string()),
             Component::Cwd("f keep".to_string()),
         ];
-        let v: Vec<String> = vec![
-            "a keep".to_string(),
-            "b keep".to_string(),
-            "red".to_string(),
-            // "c squash"
-            "reset".to_string(),
-            "green".to_string(),
-            "d keep".to_string(),
-            "blue".to_string(),
-            "e keep".to_string(),
-            "f keep".to_string(),
+        let expected = vec![
+            // Group 1
+            Component::Char("a keep".to_string()),
+            Component::Cwd("b keep".to_string()),
+            // Group 2 (Squash)
+            Component::Color(Color::Red("red".to_string())),
+            // XXX: Component::Empty,
+            // XXX: Component::Char("c squash".to_string()),
+            Component::Color(Color::Reset("reset".to_string())),
+            // Group 3
+            Component::Color(Color::Green("green".to_string())),
+            Component::Char("d keep".to_string()),
+            // Group 4
+            Component::Color(Color::Blue("blue".to_string())),
+            Component::Char("e keep".to_string()),
+            Component::Cwd("f keep".to_string()),
         ];
-        assert_eq!(squash(components), v);
+        assert_eq!(squash(components), expected);
     }
 
     #[test]
@@ -219,12 +217,16 @@ mod tests {
             Component::Char("c squash".to_string()),
             Component::Empty,
         ];
-        let v: Vec<String> = vec![
-            "a keep".to_string(),
-            "b keep".to_string(),
-            "blue".to_string(),
+        let expected = vec![
+            // Group 1
+            Component::Char("a keep".to_string()),
+            Component::Cwd("b keep".to_string()),
+            // Group 2
+            Component::Color(Color::Blue("blue".to_string())),
+            // XXX: Component::Char("c squash".to_string()),
+            // XXX: Component::Empty,
         ];
-        assert_eq!(squash(components), v);
+        assert_eq!(squash(components), expected);
     }
 
     #[test]
