@@ -60,17 +60,13 @@ fn short(current_dir: &PathBuf, home_dir: &PathBuf, git_root: &Path) -> Result<S
     let git_root = git_root.parent().unwrap().parent().unwrap();
 
     // Remove the home_dir from the git_root.
-    let git_root = git_root
-        .strip_prefix(&home_dir)
-        .expect("unable to remove home dir");
+    let git_root = git_root.strip_prefix(&home_dir)?;
 
     let short_repo = git_root.iter().fold(PathBuf::new(), |acc, part| {
         acc.join(format!("{}", part.to_string_lossy().chars().nth(0).unwrap()).as_str())
     });
 
-    let rest = current_dir
-        .strip_prefix(&git_root)
-        .expect("unable to remove non-home-dir git_root from dir");
+    let rest = current_dir.strip_prefix(&git_root)?;
 
     let mut output = PathBuf::new();
     output.push(&home_dir);
