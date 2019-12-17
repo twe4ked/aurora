@@ -61,23 +61,7 @@ fn prompt(args: Vec<String>) {
     let components = squash(components);
 
     for component in components {
-        match component {
-            Component::Char(c)
-            | Component::Color(component::color::Color::Black(c))
-            | Component::Color(component::color::Color::Blue(c))
-            | Component::Color(component::color::Color::Green(c))
-            | Component::Color(component::color::Color::Red(c))
-            | Component::Color(component::color::Color::Cyan(c))
-            | Component::Color(component::color::Color::Magenta(c))
-            | Component::Color(component::color::Color::Yellow(c))
-            | Component::Color(component::color::Color::White(c))
-            | Component::Color(component::color::Color::Reset(c))
-            | Component::Cwd(c)
-            | Component::GitBranch(c)
-            | Component::GitCommit(c)
-            | Component::GitStash(c) => print!("{}", c),
-            Component::Empty => (),
-        }
+        print!("{}", component);
     }
 }
 
