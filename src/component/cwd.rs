@@ -26,7 +26,7 @@ fn cwd(
     match style {
         CwdStyle::Default => {
             let home_dir = dirs::home_dir().unwrap_or(PathBuf::new());
-            replace_home_dir(current_dir, home_dir)
+            Ok(replace_home_dir(current_dir, &home_dir))
         }
         CwdStyle::Short => {
             let home_dir = dirs::home_dir().unwrap_or(PathBuf::new());
@@ -35,7 +35,7 @@ fn cwd(
                     short(&current_dir, &home_dir, &repository.path().to_path_buf())
                 }
                 // TODO: We want to contract up to the current dir if we don't have a git root.
-                None => replace_home_dir(current_dir, home_dir),
+                None => Ok(replace_home_dir(current_dir, &home_dir)),
             }
         }
         CwdStyle::Long => long(current_dir),
@@ -43,14 +43,8 @@ fn cwd(
 }
 
 /// Replace the home directory portion of the path with "~/"
-fn replace_home_dir(current_dir: &PathBuf, home_dir: PathBuf) -> Result<String, Error> {
-    if current_dir == &home_dir {
-        return Ok("~".to_string());
-    }
-    Ok(format!(
-        "~/{}",
-        current_dir.strip_prefix(home_dir)?.display()
-    ))
+fn replace_home_dir(current_dir: &PathBuf, home_dir: &PathBuf) -> String {
+    format!("{}", current_dir.display()).replacen(&format!("{}", home_dir.display()), "~", 1)
 }
 
 fn short(current_dir: &PathBuf, home_dir: &PathBuf, git_root: &Path) -> Result<String, Error> {
@@ -73,7 +67,7 @@ fn short(current_dir: &PathBuf, home_dir: &PathBuf, git_root: &Path) -> Result<S
     output.push(short_repo);
     output.push(rest);
 
-    Ok(replace_home_dir(&output, home_dir.to_path_buf())?)
+    Ok(replace_home_dir(&output, &home_dir.to_path_buf()))
 }
 
 fn long(current_dir: &PathBuf) -> Result<String, Error> {
@@ -90,7 +84,7 @@ mod tests {
         let home_dir = PathBuf::from("/home/foo");
 
         assert_eq!(
-            replace_home_dir(&current_dir, home_dir).unwrap(),
+            replace_home_dir(&current_dir, &home_dir),
             "~/bar/baz".to_string()
         );
     }
@@ -100,10 +94,7 @@ mod tests {
         let current_dir = PathBuf::from("/home/foo");
         let home_dir = PathBuf::from("/home/foo");
 
-        assert_eq!(
-            replace_home_dir(&current_dir, home_dir).unwrap(),
-            "~".to_string()
-        );
+        assert_eq!(replace_home_dir(&current_dir, &home_dir), "~".to_string());
     }
 
     #[test]
