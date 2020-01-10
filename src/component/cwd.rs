@@ -30,13 +30,11 @@ fn cwd(
         }
         CwdStyle::Short => {
             let home_dir = dirs::home_dir().unwrap_or(PathBuf::new());
-            match repository {
-                Some(repository) => {
-                    short(&current_dir, &home_dir, &repository.path().to_path_buf())
-                }
-                // TODO: We want to contract up to the current dir if we don't have a git root.
-                None => Ok(replace_home_dir(current_dir, &home_dir)),
-            }
+            let repository = match repository {
+                Some(repository) => Some(repository.path()),
+                None => None,
+            };
+            short(&current_dir, &home_dir, repository)
         }
         CwdStyle::Long => long(current_dir),
     }
@@ -47,27 +45,41 @@ fn replace_home_dir(current_dir: &PathBuf, home_dir: &PathBuf) -> String {
     format!("{}", current_dir.display()).replacen(&format!("{}", home_dir.display()), "~", 1)
 }
 
-fn short(current_dir: &PathBuf, home_dir: &PathBuf, git_root: &Path) -> Result<String, Error> {
-    let current_dir = current_dir.strip_prefix(&home_dir)?;
+fn short(
+    full_path: &PathBuf,
+    home_dir: &PathBuf,
+    git_path: Option<&Path>,
+) -> Result<String, Error> {
+    let full_path = replace_home_dir(&full_path, &home_dir);
+    let git_path_length = {
+        match git_path {
+            Some(git_path) => {
+                let git_path = git_path.parent().unwrap(); // Remove ".git"
+                let git_path = replace_home_dir(&git_path.to_path_buf(), &home_dir);
+                git_path.split('/').collect::<Vec<_>>().len()
+            }
+            None => 1,
+        }
+    };
 
-    // Remove repo/.git
-    let git_root = git_root.parent().unwrap().parent().unwrap();
+    let full_path_length = full_path.split('/').collect::<Vec<_>>().len();
 
-    // Remove the home_dir from the git_root.
-    let git_root = git_root.strip_prefix(&home_dir)?;
-
-    let short_repo = git_root.iter().fold(PathBuf::new(), |acc, part| {
-        acc.join(format!("{}", part.to_string_lossy().chars().nth(0).unwrap()).as_str())
-    });
-
-    let rest = current_dir.strip_prefix(&git_root)?;
-
-    let mut output = PathBuf::new();
-    output.push(&home_dir);
-    output.push(short_repo);
-    output.push(rest);
-
-    Ok(replace_home_dir(&output, &home_dir.to_path_buf()))
+    Ok(full_path
+        .split('/')
+        .enumerate()
+        .map(|(i, part)| {
+            if i == git_path_length - 1 {
+                part.to_string()
+            } else if i == full_path_length - 1 {
+                part.to_string()
+            } else if let Some(c) = part.chars().nth(0) {
+                c.to_string()
+            } else {
+                String::new()
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("/"))
 }
 
 fn long(current_dir: &PathBuf) -> Result<String, Error> {
@@ -104,13 +116,13 @@ mod tests {
         let git_root = Path::new("/home/foo/axx/bxx/repo/.git");
 
         assert_eq!(
-            short(&current_dir, &home_dir, &git_root).unwrap(),
-            "~/a/b/repo/cxx/dxx".to_string()
+            short(&current_dir, &home_dir, Some(&git_root)).unwrap(),
+            "~/a/b/repo/c/dxx".to_string()
         );
 
         let current_dir = PathBuf::from("/home/foo/axx/bxx/repo");
         assert_eq!(
-            short(&current_dir, &home_dir, &git_root).unwrap(),
+            short(&current_dir, &home_dir, Some(&git_root)).unwrap(),
             "~/a/b/repo".to_string()
         );
     }
@@ -122,8 +134,31 @@ mod tests {
         let git_root = Path::new("/home/foo/axx/.git");
 
         assert_eq!(
-            short(&current_dir, &home_dir, &git_root).unwrap(),
+            short(&current_dir, &home_dir, Some(&git_root)).unwrap(),
             "~/axx".to_string()
+        );
+    }
+
+    #[test]
+    fn short_test_root() {
+        let current_dir = PathBuf::from("/foo/bar/axx/bxx/cxx/dxx");
+        let home_dir = PathBuf::from("/home/baz");
+        let git_root = Path::new("/foo/bar/axx/.git");
+
+        assert_eq!(
+            short(&current_dir, &home_dir, Some(&git_root)).unwrap(),
+            "/f/b/axx/b/c/dxx".to_string()
+        );
+    }
+
+    #[test]
+    fn short_test_root_no_repo() {
+        let current_dir = PathBuf::from("/foo/bar/axx/bxx/cxx/dxx");
+        let home_dir = PathBuf::from("/home/baz");
+
+        assert_eq!(
+            short(&current_dir, &home_dir, None).unwrap(),
+            "/f/b/a/b/c/dxx".to_string()
         );
     }
 }
