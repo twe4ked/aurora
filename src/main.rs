@@ -4,6 +4,8 @@ mod parser;
 mod static_component;
 
 use git2::Repository;
+use std::env;
+use std::path::PathBuf;
 
 const DEFAULT_CONFIG: &str = "{cwd} {git_branch} $ ";
 
@@ -39,7 +41,9 @@ fn prompt(args: Vec<String>) {
     let output = parser::parse(&config).unwrap().1;
 
     // TODO: Don't get current_dir if it's not needed.
-    let current_dir = std::env::current_dir().expect("unable to get current dir");
+    let current_dir = env::var("PWD")
+        .map(PathBuf::from)
+        .unwrap_or(env::current_dir().expect("unable to get current dir"));
 
     // TODO: Don't try to discover repository if nothing relies on it.
     let mut git_repository = Repository::discover(&current_dir).ok();
