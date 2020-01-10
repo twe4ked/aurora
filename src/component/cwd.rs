@@ -72,10 +72,13 @@ fn short(
                 part.to_string()
             } else if i == full_path_length - 1 {
                 part.to_string()
-            } else if let Some(c) = part.chars().nth(0) {
-                c.to_string()
             } else {
-                String::new()
+                let p = part.get(0..1).unwrap_or("");
+                if p == "." {
+                    part.get(0..2).unwrap_or(p).to_string()
+                } else {
+                    p.to_string()
+                }
             }
         })
         .collect::<Vec<_>>()
@@ -159,6 +162,17 @@ mod tests {
         assert_eq!(
             short(&current_dir, &home_dir, None).unwrap(),
             "/f/b/a/b/c/dxx".to_string()
+        );
+    }
+
+    #[test]
+    fn short_test_dot_dirs() {
+        let current_dir = PathBuf::from("/.axx/./..xx/.dxx");
+        let home_dir = PathBuf::from("/home/baz");
+
+        assert_eq!(
+            short(&current_dir, &home_dir, None).unwrap(),
+            "/.a/./../.dxx".to_string()
         );
     }
 }
