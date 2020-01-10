@@ -50,7 +50,6 @@ fn short(
     home_dir: &PathBuf,
     git_path: Option<&Path>,
 ) -> Result<String, Error> {
-    let full_path = replace_home_dir(&full_path, &home_dir);
     let git_path_length = {
         match git_path {
             Some(git_path) => {
@@ -62,15 +61,15 @@ fn short(
         }
     };
 
+    let full_path = replace_home_dir(&full_path, &home_dir);
     let full_path_length = full_path.split('/').collect::<Vec<_>>().len();
 
     Ok(full_path
         .split('/')
         .enumerate()
         .map(|(i, part)| {
-            if i == git_path_length - 1 {
-                part.to_string()
-            } else if i == full_path_length - 1 {
+            if i == git_path_length - 1 || i == full_path_length - 1 {
+                // Don't truncate the repository or the final dir
                 part.to_string()
             } else {
                 let p = part.get(0..1).unwrap_or("");
