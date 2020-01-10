@@ -5,12 +5,19 @@ use crate::component::cwd;
 #[derive(Debug, PartialEq)]
 pub enum Style {
     Black,
+    DarkGrey,
     Blue,
+    DarkBlue,
     Green,
+    DarkGreen,
     Red,
+    DarkRed,
     Cyan,
+    DarkCyan,
     Magenta,
+    DarkMagenta,
     Yellow,
+    DarkYellow,
     White,
     Reset,
 }
