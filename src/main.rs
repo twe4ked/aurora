@@ -6,22 +6,30 @@ mod static_component;
 use git2::Repository;
 use std::env;
 use std::path::PathBuf;
+use structopt::StructOpt;
 
-const DEFAULT_CONFIG: &str = "{cwd} {git_branch} $ ";
+#[derive(Debug, StructOpt)]
+struct Options {
+    #[structopt(
+        name = "init .. prompt string",
+        default_value = "{cwd} {git_branch} $ "
+    )]
+    args: Vec<String>,
+}
 
 fn main() {
-    let args: Vec<_> = std::env::args().collect();
+    let options = Options::from_args();
 
-    if args.get(1) == Some(&"init".to_string()) {
-        init(args);
+    if options.args.get(0) == Some(&"init".to_string()) {
+        init(options);
     } else {
-        prompt(args);
+        prompt(options);
     }
 }
 
 /// Currently only supports Zsh
-fn init(args: Vec<String>) {
-    let config = match args.get(2) {
+fn init(options: Options) {
+    let config = match options.args.get(1) {
         Some(c) => format!(" '{}'", c),
         None => "".to_string(),
     };
@@ -35,9 +43,8 @@ fn init(args: Vec<String>) {
     )
 }
 
-fn prompt(args: Vec<String>) {
-    let default = DEFAULT_CONFIG.to_string();
-    let config = args.get(1).unwrap_or(&default);
+fn prompt(options: Options) {
+    let config = options.args.get(0).unwrap();
     let output = parser::parse(&config).unwrap().1;
 
     // TODO: Don't get current_dir if it's not needed.
