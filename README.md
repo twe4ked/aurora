@@ -52,3 +52,10 @@ everything between a color and a `{reset}`.
 - `{yellow}`, `{dark_yellow}`
 - `{white}`
 - `{reset}`
+
+## Design Goals
+
+- Speed
+- Minimal
+- Simple configuration
+- Default fonts
