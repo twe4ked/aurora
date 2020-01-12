@@ -2,7 +2,17 @@
 
 A shell prompt. Currently only works in Zsh.
 
-## Example
+## Examples
+
+```sh
+eval "$(prompt init)"
+```
+
+Produces:
+
+```
+~/Dev/github/twe4ked/prompt master $
+```
 
 ```sh
 eval "$(prompt init "\
