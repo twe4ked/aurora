@@ -30,4 +30,5 @@ pub enum Component {
     GitBranch,
     GitCommit,
     GitStash,
+    Jobs,
 }

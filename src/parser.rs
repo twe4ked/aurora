@@ -98,9 +98,14 @@ fn git_stash(input: &str) -> IResult<&str, Component> {
     Ok((input, Component::GitStash))
 }
 
+fn jobs(input: &str) -> IResult<&str, Component> {
+    let (input, _) = tag("{jobs}")(input)?;
+    Ok((input, Component::Jobs))
+}
+
 pub fn parse(input: &str) -> IResult<&str, Vec<Component>> {
     many0(alt((
-        expression, style, git_branch, git_commit, git_stash, any_char,
+        expression, style, git_branch, git_commit, git_stash, jobs, any_char,
     )))(input)
 }
 

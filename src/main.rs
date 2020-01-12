@@ -10,6 +10,8 @@ use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
 struct Options {
+    #[structopt(short, long)]
+    jobs: Option<String>,
     #[structopt(
         name = "init .. prompt string",
         default_value = "{cwd} {git_branch} $ "
@@ -34,13 +36,14 @@ fn init(options: Options) {
         None => "".to_string(),
     };
 
-    println!(
-        r#"PROMPT="\$({}{})""#,
-        std::env::current_exe()
-            .expect("could not return path to executable")
-            .display(),
-        config
-    )
+    let path = std::env::current_exe().expect("could not return path to executable");
+    let path = format!("\"{}\"", path.display());
+
+    let script = include_str!("init/init.zsh");
+    let script = script.replace("CMD", &path);
+    let script = script.replace("CONFIG", &config);
+
+    print!("{}", script);
 }
 
 fn prompt(options: Options) {
@@ -73,6 +76,7 @@ fn prompt(options: Options) {
             static_component::Component::GitStash => {
                 component::git_stash::display(git_repository.as_mut())
             }
+            static_component::Component::Jobs => component::jobs::display(&options.jobs),
         })
         .collect();
 

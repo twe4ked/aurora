@@ -5,6 +5,7 @@ pub mod cwd;
 pub mod git_branch;
 pub mod git_commit;
 pub mod git_stash;
+pub mod jobs;
 pub mod style;
 
 #[derive(Debug, PartialEq)]
@@ -15,6 +16,7 @@ pub enum Component {
     GitBranch(String),
     GitCommit(String),
     GitStash(String),
+    Jobs(String),
     Empty,
 }
 
@@ -27,6 +29,7 @@ impl fmt::Display for Component {
             | Component::Cwd(c)
             | Component::GitBranch(c)
             | Component::GitCommit(c)
+            | Component::Jobs(c)
             | Component::GitStash(c) => write!(f, "{}", c),
             Component::Empty => write!(f, ""),
         }
@@ -67,7 +70,8 @@ pub fn squash(components: Vec<Component>) -> Vec<Component> {
             Component::Cwd(_)
             | Component::GitBranch(_)
             | Component::GitCommit(_)
-            | Component::GitStash(_) => {
+            | Component::GitStash(_)
+            | Component::Jobs(_) => {
                 group.push(component);
             }
             Component::Empty => group.push(component),
@@ -84,7 +88,8 @@ fn filter(group: Vec<Component>) -> Vec<Component> {
         Component::Cwd(_)
         | Component::GitBranch(_)
         | Component::GitCommit(_)
-        | Component::GitStash(_) => true,
+        | Component::GitStash(_)
+        | Component::Jobs(_) => true,
         _ => false,
     });
 
