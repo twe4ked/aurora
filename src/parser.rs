@@ -42,7 +42,6 @@ fn style(input: &str) -> IResult<&str, Component> {
     let (input, output) = alt((
         tag("black"),
         tag("dark_grey"),
-        tag("grey_blue"),
         tag("blue"),
         tag("dark_blue"),
         tag("green"),
