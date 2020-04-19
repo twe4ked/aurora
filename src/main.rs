@@ -8,33 +8,48 @@ use git2::Repository;
 use std::env;
 use std::path::PathBuf;
 
+static DEFAULT_CONFIG: &str = "{cwd} {git_branch} $ ";
+
 #[derive(Debug, Clap)]
 struct Options {
     #[clap(short, long)]
     jobs: Option<String>,
-    #[clap(
-        name = "init .. prompt string",
-        default_value = "{cwd} {git_branch} $ "
-    )]
-    args: Vec<String>,
+    #[clap(name = "config", default_value = DEFAULT_CONFIG)]
+    config: String,
+    #[clap(subcommand)]
+    subcmd: Option<SubCommand>,
+}
+
+#[derive(Debug, Clap)]
+enum SubCommand {
+    /// Outputs init shell function. To be called from your dotfiles.
+    Init(Init),
+}
+
+#[derive(Debug, Clap)]
+struct Init {
+    #[clap(name = "config", default_value = DEFAULT_CONFIG)]
+    config: String,
 }
 
 fn main() {
     let options = Options::parse();
 
-    if options.args.get(0) == Some(&"init".to_string()) {
-        init(options);
+    if let Some(subcmd) = options.subcmd {
+        match subcmd {
+            SubCommand::Init(o) => {
+                init(o);
+                return;
+            }
+        }
     } else {
         prompt(options);
     }
 }
 
 /// Currently only supports Zsh
-fn init(options: Options) {
-    let config = match options.args.get(1) {
-        Some(c) => format!(" '{}'", c),
-        None => "".to_string(),
-    };
+fn init(init: Init) {
+    let config = format!(" '{}'", init.config);
 
     let path = std::env::current_exe().expect("could not return path to executable");
     let path = format!("\"{}\"", path.display());
@@ -47,8 +62,7 @@ fn init(options: Options) {
 }
 
 fn prompt(options: Options) {
-    let config = options.args.get(0).unwrap();
-    let output = parser::parse(&config).unwrap().1;
+    let output = parser::parse(&options.config).unwrap().1;
 
     // TODO: Don't get current_dir if it's not needed.
     let current_dir = env::var("PWD")
