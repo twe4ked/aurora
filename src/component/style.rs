@@ -1,5 +1,5 @@
 use crate::component::Component;
-use crate::static_component;
+use crate::token::StyleToken;
 use crossterm::style::{Color as CrosstermColor, ResetColor, SetForegroundColor};
 use std::fmt::Display;
 
@@ -9,37 +9,37 @@ pub enum Style {
     Reset(String),
 }
 
-impl std::convert::From<&static_component::Style> for CrosstermColor {
-    fn from(static_component_color: &static_component::Style) -> Self {
-        match static_component_color {
-            static_component::Style::Black => CrosstermColor::Black,
-            static_component::Style::DarkGrey => CrosstermColor::DarkGrey,
-            static_component::Style::Blue => CrosstermColor::Blue,
-            static_component::Style::DarkBlue => CrosstermColor::DarkBlue,
-            static_component::Style::Green => CrosstermColor::Green,
-            static_component::Style::DarkGreen => CrosstermColor::DarkGreen,
-            static_component::Style::Red => CrosstermColor::Red,
-            static_component::Style::DarkRed => CrosstermColor::DarkRed,
-            static_component::Style::Cyan => CrosstermColor::Cyan,
-            static_component::Style::DarkCyan => CrosstermColor::DarkCyan,
-            static_component::Style::Magenta => CrosstermColor::Magenta,
-            static_component::Style::DarkMagenta => CrosstermColor::DarkMagenta,
-            static_component::Style::Yellow => CrosstermColor::Yellow,
-            static_component::Style::DarkYellow => CrosstermColor::DarkYellow,
-            static_component::Style::White => CrosstermColor::White,
-            static_component::Style::Reset => unreachable!(),
+impl std::convert::From<&StyleToken> for CrosstermColor {
+    fn from(style_token: &StyleToken) -> Self {
+        match style_token {
+            StyleToken::Black => CrosstermColor::Black,
+            StyleToken::DarkGrey => CrosstermColor::DarkGrey,
+            StyleToken::Blue => CrosstermColor::Blue,
+            StyleToken::DarkBlue => CrosstermColor::DarkBlue,
+            StyleToken::Green => CrosstermColor::Green,
+            StyleToken::DarkGreen => CrosstermColor::DarkGreen,
+            StyleToken::Red => CrosstermColor::Red,
+            StyleToken::DarkRed => CrosstermColor::DarkRed,
+            StyleToken::Cyan => CrosstermColor::Cyan,
+            StyleToken::DarkCyan => CrosstermColor::DarkCyan,
+            StyleToken::Magenta => CrosstermColor::Magenta,
+            StyleToken::DarkMagenta => CrosstermColor::DarkMagenta,
+            StyleToken::Yellow => CrosstermColor::Yellow,
+            StyleToken::DarkYellow => CrosstermColor::DarkYellow,
+            StyleToken::White => CrosstermColor::White,
+            StyleToken::Reset => unreachable!(),
         }
     }
 }
 
-pub fn display(static_component_color: &static_component::Style) -> Component {
-    if static_component_color == &static_component::Style::Reset {
+pub fn display(style_token: &StyleToken) -> Component {
+    if style_token == &StyleToken::Reset {
         return Component::Style(Style::Reset(wrap_in_zsh_no_change_cursor_position(
             ResetColor,
         )));
     }
 
-    let crossterm_color = CrosstermColor::from(static_component_color);
+    let crossterm_color = CrosstermColor::from(style_token);
 
     Component::Style(Style::Color(wrap_in_zsh_no_change_cursor_position(
         SetForegroundColor(crossterm_color),
@@ -63,7 +63,7 @@ mod tests {
 
     #[test]
     fn display_green() {
-        if let Component::Style(Style::Color(green)) = display(&static_component::Style::Green) {
+        if let Component::Style(Style::Color(green)) = display(&StyleToken::Green) {
             assert_eq!(format!("{}", green), "%{\u{1b}[38;5;10m%}".to_string());
         } else {
             unreachable!();

@@ -1,7 +1,7 @@
 mod component;
 mod error;
 mod parser;
-mod static_component;
+mod token;
 
 use git2::Repository;
 use std::env;
@@ -59,24 +59,19 @@ fn prompt(options: Options) {
     let mut git_repository = Repository::discover(&current_dir).ok();
 
     // Generate a Component with an optional finished String.
+    use token::*;
     let components = output
         .iter()
         .map(|component| match component {
-            static_component::Component::Char(c) => component::character::display(&c),
-            static_component::Component::Style(style) => component::style::display(&style),
-            static_component::Component::Cwd { style } => {
+            Token::Char(c) => component::character::display(&c),
+            Token::Style(style) => component::style::display(&style),
+            Token::Cwd { style } => {
                 component::cwd::display(&style, &current_dir, git_repository.as_ref())
             }
-            static_component::Component::GitBranch => {
-                component::git_branch::display(git_repository.as_ref())
-            }
-            static_component::Component::GitCommit => {
-                component::git_commit::display(git_repository.as_ref())
-            }
-            static_component::Component::GitStash => {
-                component::git_stash::display(git_repository.as_mut())
-            }
-            static_component::Component::Jobs => component::jobs::display(&options.jobs),
+            Token::GitBranch => component::git_branch::display(git_repository.as_ref()),
+            Token::GitCommit => component::git_commit::display(git_repository.as_ref()),
+            Token::GitStash => component::git_stash::display(git_repository.as_mut()),
+            Token::Jobs => component::jobs::display(&options.jobs),
         })
         .collect();
 

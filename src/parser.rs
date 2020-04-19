@@ -1,18 +1,18 @@
 use crate::component::cwd;
-use crate::static_component::{Component, Style};
+use crate::token::{StyleToken, Token};
 use nom::branch::alt;
 use nom::bytes::complete::tag;
 use nom::character::complete::anychar;
 use nom::multi::many0;
 use nom::IResult;
 
-fn cwd(input: &str) -> IResult<&str, Component> {
+fn cwd(input: &str) -> IResult<&str, Token> {
     let (input, _) = tag("{cwd}")(input)?;
     let style = cwd::CwdStyle::Default;
-    Ok((input, Component::Cwd { style: style }))
+    Ok((input, Token::Cwd { style: style }))
 }
 
-fn cwd_with_style(input: &str) -> IResult<&str, Component> {
+fn cwd_with_style(input: &str) -> IResult<&str, Token> {
     let (input, _) = tag("{cwd style=")(input)?;
     let (input, output) = alt((tag("default"), tag("short"), tag("long")))(input)?;
     let style = match output {
@@ -23,20 +23,20 @@ fn cwd_with_style(input: &str) -> IResult<&str, Component> {
     };
     let (input, _) = tag("}")(input)?;
 
-    Ok((input, Component::Cwd { style: style }))
+    Ok((input, Token::Cwd { style: style }))
 }
 
-fn expression(input: &str) -> IResult<&str, Component> {
+fn expression(input: &str) -> IResult<&str, Token> {
     alt((cwd, cwd_with_style))(input)
 }
 
-fn any_char(input: &str) -> IResult<&str, Component> {
+fn any_char(input: &str) -> IResult<&str, Token> {
     let (input, output) = anychar(input)?;
-    Ok((input, Component::Char(output)))
+    Ok((input, Token::Char(output)))
 }
 
-fn style(input: &str) -> IResult<&str, Component> {
-    use Style::*;
+fn style(input: &str) -> IResult<&str, Token> {
+    use StyleToken::*;
 
     let (input, _) = tag("{")(input)?;
     let (input, output) = alt((
@@ -79,30 +79,30 @@ fn style(input: &str) -> IResult<&str, Component> {
         _ => unreachable!(),
     };
 
-    Ok((input, Component::Style(style)))
+    Ok((input, Token::Style(style)))
 }
 
-fn git_branch(input: &str) -> IResult<&str, Component> {
+fn git_branch(input: &str) -> IResult<&str, Token> {
     let (input, _) = tag("{git_branch}")(input)?;
-    Ok((input, Component::GitBranch))
+    Ok((input, Token::GitBranch))
 }
 
-fn git_commit(input: &str) -> IResult<&str, Component> {
+fn git_commit(input: &str) -> IResult<&str, Token> {
     let (input, _) = tag("{git_commit}")(input)?;
-    Ok((input, Component::GitCommit))
+    Ok((input, Token::GitCommit))
 }
 
-fn git_stash(input: &str) -> IResult<&str, Component> {
+fn git_stash(input: &str) -> IResult<&str, Token> {
     let (input, _) = tag("{git_stash}")(input)?;
-    Ok((input, Component::GitStash))
+    Ok((input, Token::GitStash))
 }
 
-fn jobs(input: &str) -> IResult<&str, Component> {
+fn jobs(input: &str) -> IResult<&str, Token> {
     let (input, _) = tag("{jobs}")(input)?;
-    Ok((input, Component::Jobs))
+    Ok((input, Token::Jobs))
 }
 
-pub fn parse(input: &str) -> IResult<&str, Vec<Component>> {
+pub fn parse(input: &str) -> IResult<&str, Vec<Token>> {
     many0(alt((
         expression, style, git_branch, git_commit, git_stash, jobs, any_char,
     )))(input)
@@ -117,35 +117,35 @@ mod tests {
     fn it_works() {
         assert_eq!(
             parse(&"{cwd}").unwrap().1,
-            vec![Component::Cwd {
+            vec![Token::Cwd {
                 style: cwd::CwdStyle::Default
             }]
         );
         assert_eq!(
             parse(&"{cwd} $").unwrap().1,
             vec![
-                Component::Cwd {
+                Token::Cwd {
                     style: cwd::CwdStyle::Default
                 },
-                Component::Char(' '),
-                Component::Char('$')
+                Token::Char(' '),
+                Token::Char('$')
             ]
         );
         assert_eq!(
             parse(&"{cwd style=default}").unwrap().1,
-            vec![Component::Cwd {
+            vec![Token::Cwd {
                 style: cwd::CwdStyle::Default,
             }]
         );
         assert_eq!(
             parse(&"{cwd style=short}").unwrap().1,
-            vec![Component::Cwd {
+            vec![Token::Cwd {
                 style: cwd::CwdStyle::Short
             }]
         );
         assert_eq!(
             parse(&"{cwd style=long}").unwrap().1,
-            vec![Component::Cwd {
+            vec![Token::Cwd {
                 style: cwd::CwdStyle::Long
             }]
         );

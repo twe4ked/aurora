@@ -1,9 +1,9 @@
-//! Static components are parsed from the users provided configuration.
+//! Tokens are parsed from the users provided configuration.
 
 use crate::component::cwd;
 
 #[derive(Debug, PartialEq)]
-pub enum Style {
+pub enum StyleToken {
     Black,
     DarkGrey,
     Blue,
@@ -23,9 +23,9 @@ pub enum Style {
 }
 
 #[derive(Debug, PartialEq)]
-pub enum Component {
+pub enum Token {
     Char(char),
-    Style(Style),
+    Style(StyleToken),
     Cwd { style: cwd::CwdStyle },
     GitBranch,
     GitCommit,
