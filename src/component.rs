@@ -71,10 +71,8 @@ pub fn squash(components: Vec<Component>) -> Vec<Component> {
             | Component::GitBranch(_)
             | Component::GitCommit(_)
             | Component::GitStash(_)
-            | Component::Jobs(_) => {
-                group.push(component);
-            }
-            Component::Empty => group.push(component),
+            | Component::Jobs(_)
+            | Component::Empty => group.push(component),
         }
     }
 
