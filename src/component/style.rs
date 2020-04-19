@@ -1,5 +1,6 @@
 use crate::component::Component;
 use crate::token::StyleToken;
+use crate::Shell;
 use crossterm::style::{Color as CrosstermColor, ResetColor, SetForegroundColor};
 use std::fmt::Display;
 
@@ -32,29 +33,34 @@ impl std::convert::From<&StyleToken> for CrosstermColor {
     }
 }
 
-pub fn display(style_token: &StyleToken) -> Component {
+pub fn display(style_token: &StyleToken, shell: &Shell) -> Component {
     if style_token == &StyleToken::Reset {
-        return Component::Style(Style::Reset(wrap_in_zsh_no_change_cursor_position(
-            ResetColor,
+        return Component::Style(Style::Reset(wrap_no_change_cursor_position(
+            ResetColor, shell,
         )));
     }
 
     let crossterm_color = CrosstermColor::from(style_token);
 
-    Component::Style(Style::Color(wrap_in_zsh_no_change_cursor_position(
+    Component::Style(Style::Color(wrap_no_change_cursor_position(
         SetForegroundColor(crossterm_color),
+        shell,
     )))
 }
 
 const START: &str = "%{"; // %{ESC
 const END: &str = "%}"; // %}
 
-// %{...%}
-//
-// Include a string as a literal escape sequence. The string within the braces should not change
-// the cursor position. Brace pairs can nest.
-fn wrap_in_zsh_no_change_cursor_position<T: Display>(color: T) -> String {
-    format!("{}{}{}", START, color, END)
+fn wrap_no_change_cursor_position<T: Display>(color: T, shell: &Shell) -> String {
+    match shell {
+        Shell::Zsh => {
+            // %{...%}
+            //
+            // Include a string as a literal escape sequence. The string within the braces should not change
+            // the cursor position. Brace pairs can nest.
+            format!("{}{}{}", START, color, END)
+        }
+    }
 }
 
 #[cfg(test)]
