@@ -51,10 +51,9 @@ pub fn squash(components: Vec<Component>) -> Vec<Component> {
             Component::Style(style::Style::Reset(_c)) => {
                 // End group
                 group = filter(group);
-
                 group.push(component);
                 ret.append(&mut group);
-                group = Vec::new();
+                group.clear();
             }
 
             Component::Style(style::Style::Color(_c)) => {
@@ -63,7 +62,7 @@ pub fn squash(components: Vec<Component>) -> Vec<Component> {
                 // If we're already in a group, let's end the current one, and start a new one.
                 if !group.is_empty() {
                     ret.append(&mut group);
-                    group = Vec::new();
+                    group.clear();
                 }
             }
 
