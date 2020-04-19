@@ -9,4 +9,4 @@ nom = "5"
 dirs = "2"
 git2 = "0.10"
 crossterm = { version = "0.13", default-features = false, features = ["style"] }
-structopt = "0.3"
+clap = { git = "https://github.com/clap-rs/clap" }

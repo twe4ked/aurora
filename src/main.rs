@@ -3,16 +3,16 @@ mod error;
 mod parser;
 mod token;
 
+use clap::Clap;
 use git2::Repository;
 use std::env;
 use std::path::PathBuf;
-use structopt::StructOpt;
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Clap)]
 struct Options {
-    #[structopt(short, long)]
+    #[clap(short, long)]
     jobs: Option<String>,
-    #[structopt(
+    #[clap(
         name = "init .. prompt string",
         default_value = "{cwd} {git_branch} $ "
     )]
@@ -20,7 +20,7 @@ struct Options {
 }
 
 fn main() {
-    let options = Options::from_args();
+    let options = Options::parse();
 
     if options.args.get(0) == Some(&"init".to_string()) {
         init(options);
