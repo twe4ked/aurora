@@ -1,5 +1,5 @@
 [package]
-name = "prompt"
+name = "aurora_prompt"
 version = "0.1.0"
 authors = ["Odin Dutton <odindutton@gmail.com>"]
 edition = "2018"

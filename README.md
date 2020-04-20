@@ -1,4 +1,4 @@
-# Prompt
+# Aurora Prompt
 
 A shell prompt. Currently only works in Zsh.
 

@@ -28,6 +28,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "aurora_prompt"
+version = "0.1.0"
+dependencies = [
+ "clap 3.0.0-beta.1 (git+https://github.com/clap-rs/clap/)",
+ "crossterm 0.13.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "dirs 2.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "git2 0.10.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "nom 5.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "autocfg"
 version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -440,17 +451,6 @@ version = "1.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "unicode-xid 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "prompt"
-version = "0.1.0"
-dependencies = [
- "clap 3.0.0-beta.1 (git+https://github.com/clap-rs/clap/)",
- "crossterm 0.13.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "dirs 2.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "git2 0.10.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "nom 5.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
