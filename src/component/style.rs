@@ -73,7 +73,7 @@ mod tests {
 
     #[test]
     fn display_green() {
-        if let Component::Style(Style::Color(green)) = display(&StyleToken::Green) {
+        if let Component::Style(Style::Color(green)) = display(&StyleToken::Green, &Shell::Zsh) {
             assert_eq!(format!("{}", green), "%{\u{1b}[38;5;10m%}".to_string());
         } else {
             unreachable!();
