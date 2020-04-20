@@ -9,7 +9,7 @@ use nom::IResult;
 fn cwd(input: &str) -> IResult<&str, Token> {
     let (input, _) = tag("{cwd}")(input)?;
     let style = cwd::CwdStyle::Default;
-    Ok((input, Token::Cwd { style: style }))
+    Ok((input, Token::Cwd { style }))
 }
 
 fn cwd_with_style(input: &str) -> IResult<&str, Token> {
@@ -23,7 +23,7 @@ fn cwd_with_style(input: &str) -> IResult<&str, Token> {
     };
     let (input, _) = tag("}")(input)?;
 
-    Ok((input, Token::Cwd { style: style }))
+    Ok((input, Token::Cwd { style }))
 }
 
 fn expression(input: &str) -> IResult<&str, Token> {

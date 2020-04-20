@@ -15,7 +15,9 @@ pub fn display(
     current_dir: &PathBuf,
     repository: Option<&Repository>,
 ) -> Component {
-    Component::Cwd(cwd(style, current_dir, repository).unwrap_or(long(current_dir).unwrap()))
+    Component::Cwd(
+        cwd(style, current_dir, repository).unwrap_or_else(|_| long(current_dir).unwrap()),
+    )
 }
 
 fn cwd(
@@ -25,11 +27,11 @@ fn cwd(
 ) -> Result<String, Error> {
     match style {
         CwdStyle::Default => {
-            let home_dir = dirs::home_dir().unwrap_or(PathBuf::new());
+            let home_dir = dirs::home_dir().unwrap_or_default();
             Ok(replace_home_dir(current_dir, &home_dir))
         }
         CwdStyle::Short => {
-            let home_dir = dirs::home_dir().unwrap_or(PathBuf::new());
+            let home_dir = dirs::home_dir().unwrap_or_default();
             let repository = match repository {
                 Some(repository) => Some(repository.path()),
                 None => None,
@@ -55,14 +57,14 @@ fn short(
             Some(git_path) => {
                 let git_path = git_path.parent().unwrap(); // Remove ".git"
                 let git_path = replace_home_dir(&git_path.to_path_buf(), &home_dir);
-                git_path.split('/').collect::<Vec<_>>().len()
+                git_path.split('/').count()
             }
             None => 1,
         }
     };
 
     let full_path = replace_home_dir(&full_path, &home_dir);
-    let full_path_length = full_path.split('/').collect::<Vec<_>>().len();
+    let full_path_length = full_path.split('/').count();
 
     Ok(full_path
         .split('/')

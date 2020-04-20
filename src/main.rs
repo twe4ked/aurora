@@ -103,7 +103,7 @@ fn run(options: Run) {
     // TODO: Don't get current_dir if it's not needed.
     let current_dir = env::var("PWD")
         .map(PathBuf::from)
-        .unwrap_or(env::current_dir().expect("unable to get current dir"));
+        .unwrap_or_else(|_| env::current_dir().expect("unable to get current dir"));
 
     // TODO: Don't try to discover repository if nothing relies on it.
     let mut git_repository = Repository::discover(&current_dir).ok();
@@ -113,7 +113,7 @@ fn run(options: Run) {
     let components = output
         .iter()
         .map(|component| match component {
-            Token::Char(c) => component::character::display(&c),
+            Token::Char(c) => component::character::display(*c),
             Token::Style(style) => component::style::display(&style, &options.shell),
             Token::Cwd { style } => {
                 component::cwd::display(&style, &current_dir, git_repository.as_ref())
