@@ -1,6 +1,6 @@
 # Aurora Prompt
 
-A shell prompt. Currently only works in Zsh.
+A shell prompt for Bash and Zsh.
 
 ## Examples
 
@@ -12,6 +12,16 @@ Produces:
 
 ```
 ~/Dev/github/twe4ked/prompt master $
+```
+
+```sh
+eval "$(prompt init bash "{cwd=short} $ ")"
+```
+
+Produces:
+
+```
+~/D/g/t/prompt $
 ```
 
 ```sh
