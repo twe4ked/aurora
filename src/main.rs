@@ -7,13 +7,12 @@ use clap::Clap;
 use git2::Repository;
 use std::env;
 use std::path::PathBuf;
+use std::str::FromStr;
 
 static DEFAULT_CONFIG: &str = "{cwd} {git_branch} $ ";
 
 #[derive(Debug, Clap)]
 struct Options {
-    #[clap(name = "shell")]
-    shell: Shell,
     #[clap(short, long)]
     jobs: Option<String>,
     #[clap(name = "config", default_value = DEFAULT_CONFIG)]
@@ -39,15 +38,17 @@ struct Init {
 #[derive(Debug)]
 pub enum Shell {
     Zsh,
+    Bash,
 }
 
-impl std::str::FromStr for Shell {
+impl FromStr for Shell {
     type Err = &'static str;
 
     fn from_str(input: &str) -> std::result::Result<Self, Self::Err> {
         match input {
             "zsh" => Ok(Shell::Zsh),
-            _ => Err("valid options are: zsh"),
+            "bash" => Ok(Shell::Bash),
+            _ => Err("valid options are: bash, zsh"),
         }
     }
 }
@@ -68,20 +69,19 @@ fn main() {
 }
 
 fn init(init: Init) {
-    match init.shell {
-        Shell::Zsh => {
-            let config = format!(" '{}'", init.config);
+    let script = match init.shell {
+        Shell::Zsh => include_str!("init/init.zsh"),
+        Shell::Bash => include_str!("init/init.bash"),
+    };
 
-            let path = std::env::current_exe().expect("could not return path to executable");
-            let path = format!("\"{}\"", path.display());
+    let path = std::env::current_exe().expect("could not return path to executable");
+    let path = format!("\"{}\"", path.display());
 
-            let script = include_str!("init/init.zsh");
-            let script = script.replace("CMD", &path);
-            let script = script.replace("CONFIG", &config);
+    let config = format!(" '{}'", init.config);
+    let script = script.replace("CMD", &path);
+    let script = script.replace("CONFIG", &config);
 
-            print!("{}", script);
-        }
-    }
+    print!("{}", script);
 }
 
 fn prompt(options: Options) {
@@ -95,13 +95,18 @@ fn prompt(options: Options) {
     // TODO: Don't try to discover repository if nothing relies on it.
     let mut git_repository = Repository::discover(&current_dir).ok();
 
+    let shell = match env::var("AURORA_SHELL") {
+        Ok(s) => Shell::from_str(&s).unwrap(),
+        _ => panic!("AURORA_SHELL not set"),
+    };
+
     // Generate a Component with an optional finished String.
     use token::*;
     let components = output
         .iter()
         .map(|component| match component {
             Token::Char(c) => component::character::display(&c),
-            Token::Style(style) => component::style::display(&style, &options.shell),
+            Token::Style(style) => component::style::display(&style, &shell),
             Token::Cwd { style } => {
                 component::cwd::display(&style, &current_dir, git_repository.as_ref())
             }

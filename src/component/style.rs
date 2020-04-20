@@ -60,6 +60,10 @@ fn wrap_no_change_cursor_position<T: Display>(color: T, shell: &Shell) -> String
             // the cursor position. Brace pairs can nest.
             format!("{}{}{}", START, color, END)
         }
+        Shell::Bash => {
+            // TODO: Colors not supported on Bash
+            String::new()
+        }
     }
 }
 
