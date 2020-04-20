@@ -31,7 +31,7 @@ struct Run {
     jobs: Option<String>,
     #[clap(short, long)]
     shell: Shell,
-    #[clap(name = "config", default_value = DEFAULT_CONFIG)]
+    #[clap(short, long, default_value = DEFAULT_CONFIG)]
     config: String,
 }
 
@@ -77,11 +77,11 @@ fn init(init: Init) {
     };
 
     let path = std::env::current_exe().expect("could not return path to executable");
-    let path = format!("\"{}\"", path.display());
+    let command = format!("\"{}\"", path.display());
+    let script = script.replace("__CMD__", &command);
 
-    let config = format!(" run '{}'", init.config);
-    let script = script.replace("CMD", &path);
-    let script = script.replace("CONFIG", &config);
+    let config = format!("'{}'", init.config);
+    let script = script.replace("__CONFIG__", &config);
 
     print!("{}", script);
 }

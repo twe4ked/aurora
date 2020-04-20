@@ -1,3 +1,3 @@
 function precmd() {
-  PROMPT="\$(CMDCONFIG --jobs=\\"$jobtexts\\" --shell=zsh)"
+  PROMPT="\$(__CMD__ run --config=__CONFIG__ --jobs=\\"$jobtexts\\" --shell=zsh)"
 }
