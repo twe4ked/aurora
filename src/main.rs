@@ -106,7 +106,7 @@ fn init(options: Init) -> Result<()> {
 }
 
 fn run(options: Run) -> Result<()> {
-    let output = parser::parse(&options.config).unwrap().1;
+    let output = parser::parse(&options.config)?;
 
     // TODO: Don't get current_dir if it's not needed.
     let current_dir = env::var("PWD")

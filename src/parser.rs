@@ -1,5 +1,6 @@
 use crate::component::cwd;
 use crate::token::{StyleToken, Token};
+use anyhow::Result;
 use nom::branch::alt;
 use nom::bytes::complete::tag;
 use nom::character::complete::anychar;
@@ -102,10 +103,12 @@ fn jobs(input: &str) -> IResult<&str, Token> {
     Ok((input, Token::Jobs))
 }
 
-pub fn parse(input: &str) -> IResult<&str, Vec<Token>> {
+pub fn parse(input: &str) -> Result<Vec<Token>> {
     many0(alt((
         expression, style, git_branch, git_commit, git_stash, jobs, any_char,
     )))(input)
+    .map(|(_, tokens)| Ok(tokens))
+    .unwrap_or(Err(anyhow::anyhow!("parse error")))
 }
 
 #[cfg(test)]
@@ -116,13 +119,13 @@ mod tests {
     #[test]
     fn it_works() {
         assert_eq!(
-            parse(&"{cwd}").unwrap().1,
+            parse(&"{cwd}").unwrap(),
             vec![Token::Cwd {
                 style: cwd::CwdStyle::Default
             }]
         );
         assert_eq!(
-            parse(&"{cwd} $").unwrap().1,
+            parse(&"{cwd} $").unwrap(),
             vec![
                 Token::Cwd {
                     style: cwd::CwdStyle::Default
@@ -132,19 +135,19 @@ mod tests {
             ]
         );
         assert_eq!(
-            parse(&"{cwd style=default}").unwrap().1,
+            parse(&"{cwd style=default}").unwrap(),
             vec![Token::Cwd {
                 style: cwd::CwdStyle::Default,
             }]
         );
         assert_eq!(
-            parse(&"{cwd style=short}").unwrap().1,
+            parse(&"{cwd style=short}").unwrap(),
             vec![Token::Cwd {
                 style: cwd::CwdStyle::Short
             }]
         );
         assert_eq!(
-            parse(&"{cwd style=long}").unwrap().1,
+            parse(&"{cwd style=long}").unwrap(),
             vec![Token::Cwd {
                 style: cwd::CwdStyle::Long
             }]
