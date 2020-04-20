@@ -28,11 +28,22 @@ enum SubCommand {
 #[derive(Debug, Clap)]
 struct Run {
     #[clap(short, long)]
-    jobs: Option<String>,
+    jobs: String,
     #[clap(short, long)]
     shell: Shell,
     #[clap(short, long, default_value = DEFAULT_CONFIG)]
     config: String,
+}
+
+impl Run {
+    fn jobs(&self) -> Option<String> {
+        // https://github.com/clap-rs/clap/issues/1740
+        if self.jobs.is_empty() || self.jobs == "__empty__" {
+            None
+        } else {
+            Some(self.jobs.to_string())
+        }
+    }
 }
 
 #[derive(Debug, Clap)]
@@ -110,7 +121,7 @@ fn run(options: Run) {
             Token::GitBranch => component::git_branch::display(git_repository.as_ref()),
             Token::GitCommit => component::git_commit::display(git_repository.as_ref()),
             Token::GitStash => component::git_stash::display(git_repository.as_mut()),
-            Token::Jobs => component::jobs::display(&options.jobs),
+            Token::Jobs => component::jobs::display(options.jobs()),
         })
         .collect();
 
