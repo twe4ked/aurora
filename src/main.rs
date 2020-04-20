@@ -66,12 +66,12 @@ fn main() {
 
     match options.subcmd {
         SubCommand::Init(o) => init(o),
-        SubCommand::Run(o) => prompt(o),
+        SubCommand::Run(o) => run(o),
     }
 }
 
-fn init(init: Init) {
-    let script = match init.shell {
+fn init(options: Init) {
+    let script = match options.shell {
         Shell::Zsh => include_str!("init/init.zsh"),
         Shell::Bash => include_str!("init/init.bash"),
     };
@@ -80,13 +80,13 @@ fn init(init: Init) {
     let command = format!("\"{}\"", path.display());
     let script = script.replace("__CMD__", &command);
 
-    let config = format!("'{}'", init.config);
+    let config = format!("'{}'", options.config);
     let script = script.replace("__CONFIG__", &config);
 
     print!("{}", script);
 }
 
-fn prompt(options: Run) {
+fn run(options: Run) {
     let output = parser::parse(&options.config).unwrap().1;
 
     // TODO: Don't get current_dir if it's not needed.
