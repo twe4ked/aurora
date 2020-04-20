@@ -48,22 +48,14 @@ pub fn display(style_token: &StyleToken, shell: &Shell) -> Component {
     )))
 }
 
-const START: &str = "%{"; // %{ESC
-const END: &str = "%}"; // %}
-
+// Include a string as a literal escape sequence. The string within the braces should not change
+// the cursor position. Brace pairs can nest.
 fn wrap_no_change_cursor_position<T: Display>(color: T, shell: &Shell) -> String {
     match shell {
-        Shell::Zsh => {
-            // %{...%}
-            //
-            // Include a string as a literal escape sequence. The string within the braces should not change
-            // the cursor position. Brace pairs can nest.
-            format!("{}{}{}", START, color, END)
-        }
-        Shell::Bash => {
-            // TODO: Colors not supported on Bash
-            String::new()
-        }
+        // %{...%}
+        Shell::Zsh => format!("%{{{}%}}", color),
+        // /[.../]
+        Shell::Bash => format!("\\[{}\\]", color),
     }
 }
 
@@ -75,6 +67,12 @@ mod tests {
     fn display_green() {
         if let Component::Style(Style::Color(green)) = display(&StyleToken::Green, &Shell::Zsh) {
             assert_eq!(format!("{}", green), "%{\u{1b}[38;5;10m%}".to_string());
+        } else {
+            unreachable!();
+        }
+
+        if let Component::Style(Style::Color(green)) = display(&StyleToken::Green, &Shell::Bash) {
+            assert_eq!(format!("{}", green), "\\[\u{1b}[38;5;10m\\]".to_string());
         } else {
             unreachable!();
         }
