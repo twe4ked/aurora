@@ -9,7 +9,7 @@ aurora_preexec() {
 
 # Will be run before the prompt is drawn
 aurora_precmd() {
-    PS1="$(CMDCONFIG --jobs="$(jobs -p | wc -l)")"
+    PS1="$(CMDCONFIG --jobs="$(jobs -p | wc -l)" --shell=bash)"
 }
 
 # We want to avoid destroying an existing DEBUG hook. If we detect one, create
@@ -34,5 +34,3 @@ elif [[ "$PROMPT_COMMAND" != *"aurora_precmd" ]]; then
     # Remove any trailing semicolon before appending
     PROMPT_COMMAND="${PROMPT_COMMAND%;};aurora_precmd;"
 fi
-
-export AURORA_SHELL="bash"

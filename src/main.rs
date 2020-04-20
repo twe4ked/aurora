@@ -29,6 +29,8 @@ enum SubCommand {
 struct Run {
     #[clap(short, long)]
     jobs: Option<String>,
+    #[clap(short, long)]
+    shell: Shell,
     #[clap(name = "config", default_value = DEFAULT_CONFIG)]
     config: String,
 }
@@ -95,18 +97,13 @@ fn prompt(options: Run) {
     // TODO: Don't try to discover repository if nothing relies on it.
     let mut git_repository = Repository::discover(&current_dir).ok();
 
-    let shell = match env::var("AURORA_SHELL") {
-        Ok(s) => Shell::from_str(&s).unwrap(),
-        _ => panic!("AURORA_SHELL not set"),
-    };
-
     // Generate a Component with an optional finished String.
     use token::*;
     let components = output
         .iter()
         .map(|component| match component {
             Token::Char(c) => component::character::display(&c),
-            Token::Style(style) => component::style::display(&style, &shell),
+            Token::Style(style) => component::style::display(&style, &options.shell),
             Token::Cwd { style } => {
                 component::cwd::display(&style, &current_dir, git_repository.as_ref())
             }

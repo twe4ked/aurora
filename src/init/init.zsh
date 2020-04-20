@@ -1,5 +1,3 @@
 function precmd() {
-  PROMPT="\$(CMDCONFIG --jobs=\\"$jobtexts\\")"
+  PROMPT="\$(CMDCONFIG --jobs=\\"$jobtexts\\" --shell=zsh)"
 }
-
-export AURORA_SHELL="zsh"
