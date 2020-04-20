@@ -13,18 +13,24 @@ static DEFAULT_CONFIG: &str = "{cwd} {git_branch} $ ";
 
 #[derive(Debug, Clap)]
 struct Options {
-    #[clap(short, long)]
-    jobs: Option<String>,
-    #[clap(name = "config", default_value = DEFAULT_CONFIG)]
-    config: String,
     #[clap(subcommand)]
-    subcmd: Option<SubCommand>,
+    subcmd: SubCommand,
 }
 
 #[derive(Debug, Clap)]
 enum SubCommand {
-    /// Outputs init shell function. To be called from your dotfiles.
+    /// Outputs the prompt
+    Run(Run),
+    /// Outputs init shell function. To be called from your dotfiles. This will in turn call "run"
     Init(Init),
+}
+
+#[derive(Debug, Clap)]
+struct Run {
+    #[clap(short, long)]
+    jobs: Option<String>,
+    #[clap(name = "config", default_value = DEFAULT_CONFIG)]
+    config: String,
 }
 
 #[derive(Debug, Clap)]
@@ -57,8 +63,8 @@ fn main() {
     let options = Options::parse();
 
     match options.subcmd {
-        Some(SubCommand::Init(o)) => init(o),
-        _ => prompt(options),
+        SubCommand::Init(o) => init(o),
+        SubCommand::Run(o) => prompt(o),
     }
 }
 
@@ -71,14 +77,14 @@ fn init(init: Init) {
     let path = std::env::current_exe().expect("could not return path to executable");
     let path = format!("\"{}\"", path.display());
 
-    let config = format!(" '{}'", init.config);
+    let config = format!(" run '{}'", init.config);
     let script = script.replace("CMD", &path);
     let script = script.replace("CONFIG", &config);
 
     print!("{}", script);
 }
 
-fn prompt(options: Options) {
+fn prompt(options: Run) {
     let output = parser::parse(&options.config).unwrap().1;
 
     // TODO: Don't get current_dir if it's not needed.
