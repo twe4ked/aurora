@@ -56,15 +56,9 @@ impl FromStr for Shell {
 fn main() {
     let options = Options::parse();
 
-    if let Some(subcmd) = options.subcmd {
-        match subcmd {
-            SubCommand::Init(o) => {
-                init(o);
-                return;
-            }
-        }
-    } else {
-        prompt(options);
+    match options.subcmd {
+        Some(SubCommand::Init(o)) => init(o),
+        _ => prompt(options),
     }
 }
 
