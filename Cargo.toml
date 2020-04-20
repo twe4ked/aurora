@@ -10,3 +10,4 @@ dirs = "2"
 git2 = "0.10"
 crossterm = { version = "0.13", default-features = false, features = ["style"] }
 clap = { git = "https://github.com/clap-rs/clap" }
+anyhow = "1.0.28"

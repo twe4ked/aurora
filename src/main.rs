@@ -3,8 +3,10 @@ mod error;
 mod parser;
 mod token;
 
+use anyhow::{Context, Result};
 use clap::Clap;
 use git2::Repository;
+
 use std::env;
 use std::path::PathBuf;
 use std::str::FromStr;
@@ -79,15 +81,19 @@ fn main() {
         SubCommand::Init(o) => init(o),
         SubCommand::Run(o) => run(o),
     }
+    .unwrap_or_else(|err| {
+        eprintln!("error: {}", err);
+        std::process::exit(1);
+    });
 }
 
-fn init(options: Init) {
+fn init(options: Init) -> Result<()> {
     let script = match options.shell {
         Shell::Zsh => include_str!("init/init.zsh"),
         Shell::Bash => include_str!("init/init.bash"),
     };
 
-    let path = std::env::current_exe().expect("could not return path to executable");
+    let path = std::env::current_exe().with_context(|| "could not return path to executable")?;
     let command = format!("\"{}\"", path.display());
     let script = script.replace("__CMD__", &command);
 
@@ -95,15 +101,17 @@ fn init(options: Init) {
     let script = script.replace("__CONFIG__", &config);
 
     print!("{}", script);
+
+    Ok(())
 }
 
-fn run(options: Run) {
+fn run(options: Run) -> Result<()> {
     let output = parser::parse(&options.config).unwrap().1;
 
     // TODO: Don't get current_dir if it's not needed.
     let current_dir = env::var("PWD")
         .map(PathBuf::from)
-        .unwrap_or_else(|_| env::current_dir().expect("unable to get current dir"));
+        .with_context(|| "unable to get current dir")?;
 
     // TODO: Don't try to discover repository if nothing relies on it.
     let mut git_repository = Repository::discover(&current_dir).ok();
@@ -132,4 +140,6 @@ fn run(options: Run) {
     for component in components {
         print!("{}", component);
     }
+
+    Ok(())
 }
