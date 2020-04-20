@@ -59,3 +59,7 @@ everything between a color and a `{reset}`.
 - Minimal
 - Simple configuration
 - Default fonts
+
+## Inspiration
+
+- [starship/starship](https://github.com/starship/starship)
