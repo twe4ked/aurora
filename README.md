@@ -5,7 +5,7 @@ A shell prompt. Currently only works in Zsh.
 ## Examples
 
 ```sh
-eval "$(prompt init)"
+eval "$(prompt init zsh)"
 ```
 
 Produces:
