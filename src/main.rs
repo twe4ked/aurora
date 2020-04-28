@@ -135,7 +135,7 @@ fn run(options: Run) -> Result<()> {
     let components = component::squash(components);
 
     for component in components {
-        print!("{}", component.unwrap());
+        print!("{}", component);
     }
 
     Ok(())

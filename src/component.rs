@@ -49,8 +49,8 @@ impl fmt::Display for Component {
 }
 
 // A group is something between a Style::Color and a Style::Reset.
-pub fn squash(components: Vec<Option<Component>>) -> Vec<Option<Component>> {
-    let mut ret: Vec<Option<Component>> = Vec::new();
+pub fn squash(components: Vec<Option<Component>>) -> Vec<Component> {
+    let mut ret: Vec<Component> = Vec::new();
     let mut group: Vec<Option<Component>> = Vec::new();
 
     for component in components {
@@ -64,8 +64,7 @@ pub fn squash(components: Vec<Option<Component>>) -> Vec<Option<Component>> {
                 // End group
                 group = filter(group);
                 group.push(component);
-                ret.append(&mut group);
-                group.clear();
+                ret.append(&mut group.drain(0..).filter_map(|c| c).collect());
             }
 
             Some(Component::Style(style::Style::Color(_c))) => {
@@ -73,8 +72,7 @@ pub fn squash(components: Vec<Option<Component>>) -> Vec<Option<Component>> {
 
                 // If we're already in a group, let's end the current one, and start a new one.
                 if !group.is_empty() {
-                    ret.append(&mut group);
-                    group.clear();
+                    ret.append(&mut group.drain(0..).filter_map(|c| c).collect());
                 }
             }
 
@@ -83,7 +81,7 @@ pub fn squash(components: Vec<Option<Component>>) -> Vec<Option<Component>> {
     }
 
     group = filter(group);
-    ret.append(&mut group);
+    ret.append(&mut group.into_iter().filter_map(|c| c).collect());
     ret
 }
 
@@ -146,20 +144,20 @@ mod tests {
         ];
         let expected = vec![
             // Group 1
-            Some(Component::Char("a keep".to_string())),
-            Some(Component::Cwd("b keep".to_string())),
+            Component::Char("a keep".to_string()),
+            Component::Cwd("b keep".to_string()),
             // Group 2 (Squash)
-            Some(Component::Style(Style::Color("red".to_string()))),
+            Component::Style(Style::Color("red".to_string())),
             // XXX: None,
-            // XXX: Some(Component::Char("c squash".to_string())),
-            Some(Component::Style(Style::Reset("reset".to_string()))),
+            // XXX: Component::Char("c squash".to_string()),
+            Component::Style(Style::Reset("reset".to_string())),
             // Group 3
-            Some(Component::Style(Style::Color("green".to_string()))),
-            Some(Component::Char("d keep".to_string())),
+            Component::Style(Style::Color("green".to_string())),
+            Component::Char("d keep".to_string()),
             // Group 4
-            Some(Component::Style(Style::Color("blue".to_string()))),
-            Some(Component::Char("e keep".to_string())),
-            Some(Component::Cwd("f keep".to_string())),
+            Component::Style(Style::Color("blue".to_string())),
+            Component::Char("e keep".to_string()),
+            Component::Cwd("f keep".to_string()),
         ];
         assert_eq!(squash(components), expected);
     }
@@ -177,10 +175,10 @@ mod tests {
         ];
         let expected = vec![
             // Group 1
-            Some(Component::Char("a keep".to_string())),
-            Some(Component::Cwd("b keep".to_string())),
+            Component::Char("a keep".to_string()),
+            Component::Cwd("b keep".to_string()),
             // Group 2
-            Some(Component::Style(Style::Color("blue".to_string()))),
+            Component::Style(Style::Color("blue".to_string())),
             // XXX: Some(Component::Char("c squash".to_string())),
             // XXX: None,
         ];
