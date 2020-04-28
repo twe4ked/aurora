@@ -1,5 +1,5 @@
 use crate::component::Component;
 
-pub fn display(c: char) -> Component {
-    Component::Char(format!("{}", c))
+pub fn display(c: char) -> Option<Component> {
+    Some(Component::Char(format!("{}", c)))
 }

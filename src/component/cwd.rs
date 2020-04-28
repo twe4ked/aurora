@@ -9,9 +9,11 @@ pub enum CwdStyle {
     Short,
 }
 
-pub fn display(style: &CwdStyle) -> Component {
+pub fn display(style: &CwdStyle) -> Option<Component> {
     let current_dir = crate::CURRENT_DIR.lock().expect("poisoned");
-    Component::Cwd(cwd(style, &current_dir).unwrap_or_else(|_| long(&current_dir).unwrap()))
+    Some(Component::Cwd(
+        cwd(style, &current_dir).unwrap_or_else(|_| long(&current_dir).unwrap()),
+    ))
 }
 
 fn cwd(style: &CwdStyle, current_dir: &PathBuf) -> Result<String, Error> {

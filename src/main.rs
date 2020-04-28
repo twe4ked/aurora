@@ -142,12 +142,12 @@ fn run(options: Run) -> Result<()> {
         })
         .collect();
 
-    // Squash any characters we don't need where a component has returned ::Empty.
+    // Squash any characters we don't need where a component has returned None.
     let components = component::squash(components);
 
     // Print components.
     for component in components {
-        print!("{}", component);
+        print!("{}", component.unwrap());
     }
 
     Ok(())

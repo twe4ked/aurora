@@ -17,7 +17,6 @@ pub enum Component {
     GitCommit(String),
     GitStash(String),
     Jobs(String),
-    Empty,
 }
 
 impl fmt::Display for Component {
@@ -31,24 +30,23 @@ impl fmt::Display for Component {
             | Component::GitCommit(c)
             | Component::Jobs(c)
             | Component::GitStash(c) => write!(f, "{}", c),
-            Component::Empty => write!(f, ""),
         }
     }
 }
 
 // A group is something between a Style::Color and a Style::Reset.
-pub fn squash(components: Vec<Component>) -> Vec<Component> {
-    let mut ret: Vec<Component> = Vec::new();
-    let mut group: Vec<Component> = Vec::new();
+pub fn squash(components: Vec<Option<Component>>) -> Vec<Option<Component>> {
+    let mut ret: Vec<Option<Component>> = Vec::new();
+    let mut group: Vec<Option<Component>> = Vec::new();
 
     for component in components {
         match &component {
-            Component::Char(_c) => {
+            Some(Component::Char(_c)) => {
                 // Store every Char in the group, we're not sure if we want to squash them yet.
                 group.push(component);
             }
 
-            Component::Style(style::Style::Reset(_c)) => {
+            Some(Component::Style(style::Style::Reset(_c))) => {
                 // End group
                 group = filter(group);
                 group.push(component);
@@ -56,7 +54,7 @@ pub fn squash(components: Vec<Component>) -> Vec<Component> {
                 group.clear();
             }
 
-            Component::Style(style::Style::Color(_c)) => {
+            Some(Component::Style(style::Style::Color(_c))) => {
                 group.push(component);
 
                 // If we're already in a group, let's end the current one, and start a new one.
@@ -66,12 +64,7 @@ pub fn squash(components: Vec<Component>) -> Vec<Component> {
                 }
             }
 
-            Component::Cwd(_)
-            | Component::GitBranch(_)
-            | Component::GitCommit(_)
-            | Component::GitStash(_)
-            | Component::Jobs(_)
-            | Component::Empty => group.push(component),
+            _ => group.push(component),
         }
     }
 
@@ -80,23 +73,32 @@ pub fn squash(components: Vec<Component>) -> Vec<Component> {
     ret
 }
 
-fn filter(group: Vec<Component>) -> Vec<Component> {
-    let group_contains_some_value = group.iter().any(|c| match c {
-        Component::Cwd(_)
-        | Component::GitBranch(_)
-        | Component::GitCommit(_)
-        | Component::GitStash(_)
-        | Component::Jobs(_) => true,
-        _ => false,
+fn filter(group: Vec<Option<Component>>) -> Vec<Option<Component>> {
+    let group_contains_some_value = group.iter().any(|c| {
+        //
+        match c {
+            Some(x) => {
+                // TODO: Invert, make this Style/Char
+                match x {
+                    Component::Cwd(_)
+                    | Component::GitBranch(_)
+                    | Component::GitCommit(_)
+                    | Component::GitStash(_)
+                    | Component::Jobs(_) => true,
+                    _ => false,
+                }
+            }
+            None => false,
+        }
     });
 
     let group_contains_none_value = group.iter().any(|c| match c {
-        Component::Empty => true,
+        None => true,
         _ => false,
     });
 
     let group_contains_all_char_and_or_color = group.iter().all(|c| match c {
-        Component::Char(_) | Component::Style(_) => true,
+        Some(Component::Char(_)) | Some(Component::Style(_)) => true,
         _ => false,
     });
 
@@ -109,7 +111,7 @@ fn filter(group: Vec<Component>) -> Vec<Component> {
         group
             .into_iter()
             .filter(|c| match c {
-                Component::Char(_) | Component::Empty => false,
+                Some(Component::Char(_)) | None => false,
                 _ => true,
             })
             .collect()
@@ -125,37 +127,37 @@ mod tests {
     fn test_squash_keep_1() {
         let components = vec![
             // Group 1
-            Component::Char("a keep".to_string()),
-            Component::Cwd("b keep".to_string()),
+            Some(Component::Char("a keep".to_string())),
+            Some(Component::Cwd("b keep".to_string())),
             // Group 2 (Squash)
-            Component::Style(Style::Color("red".to_string())),
-            Component::Empty,
-            Component::Char("c squash".to_string()),
-            Component::Style(Style::Reset("reset".to_string())),
+            Some(Component::Style(Style::Color("red".to_string()))),
+            None,
+            Some(Component::Char("c squash".to_string())),
+            Some(Component::Style(Style::Reset("reset".to_string()))),
             // Group 3
-            Component::Style(Style::Color("green".to_string())),
-            Component::Char("d keep".to_string()),
+            Some(Component::Style(Style::Color("green".to_string()))),
+            Some(Component::Char("d keep".to_string())),
             // Group 4
-            Component::Style(Style::Color("blue".to_string())),
-            Component::Char("e keep".to_string()),
-            Component::Cwd("f keep".to_string()),
+            Some(Component::Style(Style::Color("blue".to_string()))),
+            Some(Component::Char("e keep".to_string())),
+            Some(Component::Cwd("f keep".to_string())),
         ];
         let expected = vec![
             // Group 1
-            Component::Char("a keep".to_string()),
-            Component::Cwd("b keep".to_string()),
+            Some(Component::Char("a keep".to_string())),
+            Some(Component::Cwd("b keep".to_string())),
             // Group 2 (Squash)
-            Component::Style(Style::Color("red".to_string())),
-            // XXX: Component::Empty,
-            // XXX: Component::Char("c squash".to_string()),
-            Component::Style(Style::Reset("reset".to_string())),
+            Some(Component::Style(Style::Color("red".to_string()))),
+            // XXX: None,
+            // XXX: Some(Component::Char("c squash".to_string())),
+            Some(Component::Style(Style::Reset("reset".to_string()))),
             // Group 3
-            Component::Style(Style::Color("green".to_string())),
-            Component::Char("d keep".to_string()),
+            Some(Component::Style(Style::Color("green".to_string()))),
+            Some(Component::Char("d keep".to_string())),
             // Group 4
-            Component::Style(Style::Color("blue".to_string())),
-            Component::Char("e keep".to_string()),
-            Component::Cwd("f keep".to_string()),
+            Some(Component::Style(Style::Color("blue".to_string()))),
+            Some(Component::Char("e keep".to_string())),
+            Some(Component::Cwd("f keep".to_string())),
         ];
         assert_eq!(squash(components), expected);
     }
@@ -164,21 +166,21 @@ mod tests {
     fn test_squash_keep_empty_end() {
         let components = vec![
             // Group 1
-            Component::Char("a keep".to_string()),
-            Component::Cwd("b keep".to_string()),
+            Some(Component::Char("a keep".to_string())),
+            Some(Component::Cwd("b keep".to_string())),
             // Group 2
-            Component::Style(Style::Color("blue".to_string())),
-            Component::Char("c squash".to_string()),
-            Component::Empty,
+            Some(Component::Style(Style::Color("blue".to_string()))),
+            Some(Component::Char("c squash".to_string())),
+            None,
         ];
         let expected = vec![
             // Group 1
-            Component::Char("a keep".to_string()),
-            Component::Cwd("b keep".to_string()),
+            Some(Component::Char("a keep".to_string())),
+            Some(Component::Cwd("b keep".to_string())),
             // Group 2
-            Component::Style(Style::Color("blue".to_string())),
-            // XXX: Component::Char("c squash".to_string()),
-            // XXX: Component::Empty,
+            Some(Component::Style(Style::Color("blue".to_string()))),
+            // XXX: Some(Component::Char("c squash".to_string())),
+            // XXX: None,
         ];
         assert_eq!(squash(components), expected);
     }
@@ -186,8 +188,8 @@ mod tests {
     #[test]
     fn test_filter_just_char() {
         assert_eq!(
-            filter(vec![Component::Char("a keep".to_string())]),
-            vec![Component::Char("a keep".to_string())]
+            filter(vec![Some(Component::Char("a keep".to_string()))]),
+            vec![Some(Component::Char("a keep".to_string()))]
         );
     }
 
@@ -195,14 +197,14 @@ mod tests {
     fn test_filter_just_char_ignores_color() {
         assert_eq!(
             filter(vec![
-                Component::Style(Style::Color("green".to_string())),
-                Component::Char("a keep".to_string()),
-                Component::Style(Style::Reset("reset".to_string())),
+                Some(Component::Style(Style::Color("green".to_string()))),
+                Some(Component::Char("a keep".to_string())),
+                Some(Component::Style(Style::Reset("reset".to_string()))),
             ]),
             vec![
-                Component::Style(Style::Color("green".to_string())),
-                Component::Char("a keep".to_string()),
-                Component::Style(Style::Reset("reset".to_string())),
+                Some(Component::Style(Style::Color("green".to_string()))),
+                Some(Component::Char("a keep".to_string())),
+                Some(Component::Style(Style::Reset("reset".to_string()))),
             ]
         );
     }
@@ -211,12 +213,12 @@ mod tests {
     fn test_filter_char_and_cwd() {
         assert_eq!(
             filter(vec![
-                Component::Char("a keep".to_string()),
-                Component::Cwd("b keep".to_string()),
+                Some(Component::Char("a keep".to_string())),
+                Some(Component::Cwd("b keep".to_string())),
             ]),
             vec![
-                Component::Char("a keep".to_string()),
-                Component::Cwd("b keep".to_string()),
+                Some(Component::Char("a keep".to_string())),
+                Some(Component::Cwd("b keep".to_string())),
             ]
         );
     }
@@ -225,16 +227,16 @@ mod tests {
     fn test_filter_char_and_cwd_ignores_color() {
         assert_eq!(
             filter(vec![
-                Component::Style(Style::Color("green".to_string())),
-                Component::Char("a keep".to_string()),
-                Component::Cwd("b keep".to_string()),
-                Component::Style(Style::Reset("reset".to_string())),
+                Some(Component::Style(Style::Color("green".to_string()))),
+                Some(Component::Char("a keep".to_string())),
+                Some(Component::Cwd("b keep".to_string())),
+                Some(Component::Style(Style::Reset("reset".to_string()))),
             ]),
             vec![
-                Component::Style(Style::Color("green".to_string())),
-                Component::Char("a keep".to_string()),
-                Component::Cwd("b keep".to_string()),
-                Component::Style(Style::Reset("reset".to_string())),
+                Some(Component::Style(Style::Color("green".to_string()))),
+                Some(Component::Char("a keep".to_string())),
+                Some(Component::Cwd("b keep".to_string())),
+                Some(Component::Style(Style::Reset("reset".to_string()))),
             ]
         );
     }
@@ -242,10 +244,7 @@ mod tests {
     #[test]
     fn test_filter_char_and_empty() {
         assert_eq!(
-            filter(vec![
-                Component::Char("a keep".to_string()),
-                Component::Empty,
-            ]),
+            filter(vec![Some(Component::Char("a keep".to_string())), None,]),
             vec![]
         );
     }
@@ -254,14 +253,14 @@ mod tests {
     fn test_filter_char_and_empty_ignores_color() {
         assert_eq!(
             filter(vec![
-                Component::Style(Style::Color("green".to_string())),
-                Component::Char("a keep".to_string()),
-                Component::Empty,
-                Component::Style(Style::Reset("reset".to_string())),
+                Some(Component::Style(Style::Color("green".to_string()))),
+                Some(Component::Char("a keep".to_string())),
+                None,
+                Some(Component::Style(Style::Reset("reset".to_string()))),
             ]),
             vec![
-                Component::Style(Style::Color("green".to_string())),
-                Component::Style(Style::Reset("reset".to_string())),
+                Some(Component::Style(Style::Color("green".to_string()))),
+                Some(Component::Style(Style::Reset("reset".to_string()))),
             ]
         );
     }
@@ -270,18 +269,18 @@ mod tests {
     fn test_filter_char_cwd_and_empty() {
         assert_eq!(
             filter(vec![
-                Component::Style(Style::Color("green".to_string())),
-                Component::Char("a keep".to_string()),
-                Component::Cwd("b keep".to_string()),
-                Component::Empty,
-                Component::Style(Style::Reset("reset".to_string())),
+                Some(Component::Style(Style::Color("green".to_string()))),
+                Some(Component::Char("a keep".to_string())),
+                Some(Component::Cwd("b keep".to_string())),
+                None,
+                Some(Component::Style(Style::Reset("reset".to_string()))),
             ]),
             vec![
-                Component::Style(Style::Color("green".to_string())),
-                Component::Char("a keep".to_string()),
-                Component::Cwd("b keep".to_string()),
-                Component::Empty,
-                Component::Style(Style::Reset("reset".to_string())),
+                Some(Component::Style(Style::Color("green".to_string()))),
+                Some(Component::Char("a keep".to_string())),
+                Some(Component::Cwd("b keep".to_string())),
+                None,
+                Some(Component::Style(Style::Reset("reset".to_string()))),
             ]
         );
     }

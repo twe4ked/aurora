@@ -1,6 +1,6 @@
 use crate::component::Component;
 
-pub fn display() -> Component {
+pub fn display() -> Option<Component> {
     let mut repository = crate::GIT_REPOSITORY.lock().expect("poisoned");
     match &mut *repository {
         Some(ref mut r) => {
@@ -10,10 +10,10 @@ pub fn display() -> Component {
                 true
             });
             if x.is_err() || count == 0 {
-                return Component::Empty;
+                return None;
             }
-            Component::GitStash(format!("{}+", count))
+            Some(Component::GitStash(format!("{}+", count)))
         }
-        None => Component::Empty,
+        None => None,
     }
 }
