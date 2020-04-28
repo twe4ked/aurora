@@ -134,7 +134,7 @@ fn run(options: Run) -> Result<()> {
         .map(|component| match component {
             Token::Char(c) => component::character::display(*c),
             Token::Style(style) => component::style::display(&style, &options.shell),
-            Token::Cwd { style } => component::cwd::display(&style),
+            Token::Cwd(style) => component::cwd::display(&style),
             Token::GitBranch => component::git_branch::display(),
             Token::GitCommit => component::git_commit::display(),
             Token::GitStash => component::git_stash::display(),

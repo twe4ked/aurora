@@ -10,7 +10,7 @@ use nom::IResult;
 fn cwd(input: &str) -> IResult<&str, Token> {
     let (input, _) = tag("{cwd}")(input)?;
     let style = cwd::CwdStyle::Default;
-    Ok((input, Token::Cwd { style }))
+    Ok((input, Token::Cwd(style)))
 }
 
 fn cwd_with_style(input: &str) -> IResult<&str, Token> {
@@ -24,7 +24,7 @@ fn cwd_with_style(input: &str) -> IResult<&str, Token> {
     };
     let (input, _) = tag("}")(input)?;
 
-    Ok((input, Token::Cwd { style }))
+    Ok((input, Token::Cwd(style)))
 }
 
 fn expression(input: &str) -> IResult<&str, Token> {
@@ -120,37 +120,27 @@ mod tests {
     fn it_works() {
         assert_eq!(
             parse(&"{cwd}").unwrap(),
-            vec![Token::Cwd {
-                style: cwd::CwdStyle::Default
-            }]
+            vec![Token::Cwd(cwd::CwdStyle::Default)]
         );
         assert_eq!(
             parse(&"{cwd} $").unwrap(),
             vec![
-                Token::Cwd {
-                    style: cwd::CwdStyle::Default
-                },
+                Token::Cwd(cwd::CwdStyle::Default),
                 Token::Char(' '),
                 Token::Char('$')
             ]
         );
         assert_eq!(
             parse(&"{cwd style=default}").unwrap(),
-            vec![Token::Cwd {
-                style: cwd::CwdStyle::Default,
-            }]
+            vec![Token::Cwd(cwd::CwdStyle::Default)]
         );
         assert_eq!(
             parse(&"{cwd style=short}").unwrap(),
-            vec![Token::Cwd {
-                style: cwd::CwdStyle::Short
-            }]
+            vec![Token::Cwd(cwd::CwdStyle::Short)]
         );
         assert_eq!(
             parse(&"{cwd style=long}").unwrap(),
-            vec![Token::Cwd {
-                style: cwd::CwdStyle::Long
-            }]
+            vec![Token::Cwd(cwd::CwdStyle::Long)]
         );
     }
 }

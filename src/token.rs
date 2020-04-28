@@ -26,7 +26,7 @@ pub enum StyleToken {
 pub enum Token {
     Char(char),
     Style(StyleToken),
-    Cwd { style: cwd::CwdStyle },
+    Cwd(cwd::CwdStyle),
     GitBranch,
     GitCommit,
     GitStash,
