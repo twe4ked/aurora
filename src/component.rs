@@ -82,28 +82,43 @@ pub fn squash(components: Vec<Option<Component>>) -> Vec<Component> {
 }
 
 fn filter(group: &mut Vec<Option<Component>>) {
-    let group_contains_some_value = group.iter().any(|c| match c {
+    // Groups with just a Char and or Style should be kept:
+    //
+    // {red}>{reset}
+    //  ^   ^
+    //  |   ` Char
+    //  ` Style
+    let group_contains_something_other_than_char_or_style = !group.iter().all(|c| match c {
+        // Check for Char
+        Some(Component::Char(_)) => true,
+        // Check for Style
+        Some(Component::Style(_)) => true,
+        _ => false,
+    });
+
+    // However, if the group also contains a None value, we want to run the filter.
+    //
+    // {red}+{git_stash}{reset}
+    //      ^ ^
+    //      | `None -- git_stash returned a None
+    //      ` Char
+    let group_contains_no_value = !group.iter().any(|c| match c {
+        // We don't want to count Style or Char as we don't consider them "values"
         Some(Component::Style(_)) | Some(Component::Char(_)) => false,
+        // Everything else is a "value"
         Some(_) => true,
+        // Except None
         None => false,
     });
 
-    let group_contains_none_value = group.iter().any(|c| match c {
-        None => true,
-        _ => false,
-    });
-
-    let group_contains_all_char_and_or_color = group.iter().all(|c| match c {
-        Some(Component::Style(_)) | Some(Component::Char(_)) => true,
-        _ => false,
-    });
-
-    if group_contains_none_value
-        && !group_contains_all_char_and_or_color
-        && !group_contains_some_value
-    {
+    if group_contains_something_other_than_char_or_style && group_contains_no_value {
+        // Retain everything that isn't a Char or a None
         group.retain(|c| match c {
-            Some(Component::Char(_)) | None => false,
+            // Remove Char
+            Some(Component::Char(_)) => false,
+            // Remove None
+            None => false,
+            // Keep everything else; Style, Cwd, etc.
             _ => true,
         });
     }
