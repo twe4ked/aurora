@@ -101,14 +101,9 @@ fn init(options: Init) -> Result<()> {
 }
 
 fn run(options: Run) -> Result<()> {
-    let output = parser::parse(&options.config)?;
+    let tokens = parser::parse(&options.config)?;
 
-    let components = output
-        .iter()
-        .map(|component| component::run(component, &options))
-        .collect();
-
-    let components = component::squash(components);
+    let components = component::components_from_tokens(&tokens, &options);
 
     for component in components {
         print!("{}", component);

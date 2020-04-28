@@ -21,16 +21,21 @@ pub enum Component {
     Jobs(String),
 }
 
-pub fn run(token: &Token, options: &crate::Run) -> Option<Component> {
-    match token {
-        Token::Char(c) => character::display(*c),
-        Token::Style(style) => style::display(&style, &options.shell),
-        Token::Cwd(style) => cwd::display(&style),
-        Token::GitBranch => git_branch::display(),
-        Token::GitCommit => git_commit::display(),
-        Token::GitStash => git_stash::display(),
-        Token::Jobs => jobs::display(options.jobs()),
-    }
+pub fn components_from_tokens(tokens: &[Token], options: &crate::Run) -> Vec<Component> {
+    let components = tokens
+        .iter()
+        .map(|token| match token {
+            Token::Char(c) => character::display(*c),
+            Token::Style(style) => style::display(&style, &options.shell),
+            Token::Cwd(style) => cwd::display(&style),
+            Token::GitBranch => git_branch::display(),
+            Token::GitCommit => git_commit::display(),
+            Token::GitStash => git_stash::display(),
+            Token::Jobs => jobs::display(options.jobs()),
+        })
+        .collect();
+
+    squash(components)
 }
 
 impl fmt::Display for Component {
@@ -49,7 +54,7 @@ impl fmt::Display for Component {
 }
 
 // A group is something between a Style::Color and a Style::Reset.
-pub fn squash(components: Vec<Option<Component>>) -> Vec<Component> {
+fn squash(components: Vec<Option<Component>>) -> Vec<Component> {
     struct Ret(Vec<Component>);
 
     impl Ret {
