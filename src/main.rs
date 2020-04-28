@@ -6,12 +6,31 @@ mod token;
 use anyhow::{Context, Result};
 use clap::Clap;
 use git2::Repository;
+use once_cell::sync::Lazy;
 
 use std::env;
 use std::path::PathBuf;
 use std::str::FromStr;
+use std::sync::Mutex;
 
 static DEFAULT_CONFIG: &str = "{cwd} {git_branch} $ ";
+
+pub static CURRENT_DIR: Lazy<Mutex<PathBuf>> = Lazy::new(|| {
+    let current_dir = env::var("PWD")
+        .map(PathBuf::from)
+        .with_context(|| "unable to get current dir")
+        .unwrap();
+    Mutex::new(current_dir)
+});
+
+pub static GIT_REPOSITORY: Lazy<Mutex<Option<Repository>>> = Lazy::new(|| {
+    let current_dir = env::var("PWD")
+        .map(PathBuf::from)
+        .with_context(|| "unable to get current dir")
+        .unwrap();
+    let r = Repository::discover(&current_dir).ok();
+    Mutex::new(r)
+});
 
 #[derive(Debug, Clap)]
 struct Options {
@@ -108,14 +127,6 @@ fn init(options: Init) -> Result<()> {
 fn run(options: Run) -> Result<()> {
     let output = parser::parse(&options.config)?;
 
-    // TODO: Don't get current_dir if it's not needed.
-    let current_dir = env::var("PWD")
-        .map(PathBuf::from)
-        .with_context(|| "unable to get current dir")?;
-
-    // TODO: Don't try to discover repository if nothing relies on it.
-    let mut git_repository = Repository::discover(&current_dir).ok();
-
     // Generate a Component with an optional finished String.
     use token::*;
     let components = output
@@ -123,12 +134,10 @@ fn run(options: Run) -> Result<()> {
         .map(|component| match component {
             Token::Char(c) => component::character::display(*c),
             Token::Style(style) => component::style::display(&style, &options.shell),
-            Token::Cwd { style } => {
-                component::cwd::display(&style, &current_dir, git_repository.as_ref())
-            }
-            Token::GitBranch => component::git_branch::display(git_repository.as_ref()),
-            Token::GitCommit => component::git_commit::display(git_repository.as_ref()),
-            Token::GitStash => component::git_stash::display(git_repository.as_mut()),
+            Token::Cwd { style } => component::cwd::display(&style),
+            Token::GitBranch => component::git_branch::display(),
+            Token::GitCommit => component::git_commit::display(),
+            Token::GitStash => component::git_stash::display(),
             Token::Jobs => component::jobs::display(options.jobs()),
         })
         .collect();

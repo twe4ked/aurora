@@ -1,6 +1,5 @@
 use crate::component::Component;
 use crate::error::Error;
-use git2::Repository;
 use std::path::{Path, PathBuf};
 
 #[derive(Debug, PartialEq)]
@@ -10,21 +9,12 @@ pub enum CwdStyle {
     Short,
 }
 
-pub fn display(
-    style: &CwdStyle,
-    current_dir: &PathBuf,
-    repository: Option<&Repository>,
-) -> Component {
-    Component::Cwd(
-        cwd(style, current_dir, repository).unwrap_or_else(|_| long(current_dir).unwrap()),
-    )
+pub fn display(style: &CwdStyle) -> Component {
+    let current_dir = crate::CURRENT_DIR.lock().expect("poisoned");
+    Component::Cwd(cwd(style, &current_dir).unwrap_or_else(|_| long(&current_dir).unwrap()))
 }
 
-fn cwd(
-    style: &CwdStyle,
-    current_dir: &PathBuf,
-    repository: Option<&Repository>,
-) -> Result<String, Error> {
+fn cwd(style: &CwdStyle, current_dir: &PathBuf) -> Result<String, Error> {
     match style {
         CwdStyle::Default => {
             let home_dir = dirs::home_dir().unwrap_or_default();
@@ -32,8 +22,9 @@ fn cwd(
         }
         CwdStyle::Short => {
             let home_dir = dirs::home_dir().unwrap_or_default();
-            let repository = match repository {
-                Some(repository) => Some(repository.path()),
+            let repository = crate::GIT_REPOSITORY.lock().expect("poisoned");
+            let repository = match &*repository {
+                Some(r) => Some(r.path()),
                 None => None,
             };
             short(&current_dir, &home_dir, repository)
