@@ -98,9 +98,9 @@ fn filter(group: &mut Vec<Option<Component>>) {
         _ => false,
     });
 
-    if !(!group_contains_none_value
-        || group_contains_all_char_and_or_color
-        || group_contains_some_value)
+    if group_contains_none_value
+        && !group_contains_all_char_and_or_color
+        && !group_contains_some_value
     {
         group.retain(|c| match c {
             Some(Component::Char(_)) | None => false,
