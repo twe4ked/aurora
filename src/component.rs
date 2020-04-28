@@ -74,22 +74,10 @@ pub fn squash(components: Vec<Option<Component>>) -> Vec<Option<Component>> {
 }
 
 fn filter(group: Vec<Option<Component>>) -> Vec<Option<Component>> {
-    let group_contains_some_value = group.iter().any(|c| {
-        //
-        match c {
-            Some(x) => {
-                // TODO: Invert, make this Style/Char
-                match x {
-                    Component::Cwd(_)
-                    | Component::GitBranch(_)
-                    | Component::GitCommit(_)
-                    | Component::GitStash(_)
-                    | Component::Jobs(_) => true,
-                    _ => false,
-                }
-            }
-            None => false,
-        }
+    let group_contains_some_value = group.iter().any(|c| match c {
+        Some(Component::Style(_)) | Some(Component::Char(_)) => false,
+        Some(_) => true,
+        None => false,
     });
 
     let group_contains_none_value = group.iter().any(|c| match c {
