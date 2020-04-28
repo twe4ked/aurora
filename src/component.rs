@@ -71,8 +71,8 @@ pub fn squash(components: Vec<Option<Component>>) -> Vec<Component> {
 
             Some(Component::Style(style::Style::Reset(_c))) => {
                 // End group
-                group = filter(group);
                 group.push(component);
+                group = filter(group);
                 ret.append(&mut group);
             }
 
