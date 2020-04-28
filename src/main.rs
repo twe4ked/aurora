@@ -24,6 +24,7 @@ pub static CURRENT_DIR: Lazy<Mutex<PathBuf>> = Lazy::new(|| {
 });
 
 pub static GIT_REPOSITORY: Lazy<Mutex<Option<Repository>>> = Lazy::new(|| {
+    // TODO: Re-use CURRENT_DIR here.
     let current_dir = env::var("PWD")
         .map(PathBuf::from)
         .with_context(|| "unable to get current dir")
