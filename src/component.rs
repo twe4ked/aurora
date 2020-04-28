@@ -94,7 +94,7 @@ fn filter(group: &mut Vec<Option<Component>>) {
     });
 
     let group_contains_all_char_and_or_color = group.iter().all(|c| match c {
-        Some(Component::Char(_)) | Some(Component::Style(_)) => true,
+        Some(Component::Style(_)) | Some(Component::Char(_)) => true,
         _ => false,
     });
 
