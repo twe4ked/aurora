@@ -1,5 +1,7 @@
 use std::fmt;
 
+use crate::token::Token;
+
 pub mod character;
 pub mod cwd;
 pub mod git_branch;
@@ -17,6 +19,18 @@ pub enum Component {
     GitCommit(String),
     GitStash(String),
     Jobs(String),
+}
+
+pub fn run(token: &Token, options: &crate::Run) -> Option<Component> {
+    match token {
+        Token::Char(c) => character::display(*c),
+        Token::Style(style) => style::display(&style, &options.shell),
+        Token::Cwd(style) => cwd::display(&style),
+        Token::GitBranch => git_branch::display(),
+        Token::GitCommit => git_commit::display(),
+        Token::GitStash => git_stash::display(),
+        Token::Jobs => jobs::display(options.jobs()),
+    }
 }
 
 impl fmt::Display for Component {

@@ -47,7 +47,7 @@ enum SubCommand {
 }
 
 #[derive(Debug, Clap)]
-struct Run {
+pub struct Run {
     #[clap(short, long)]
     jobs: String,
     #[clap(short, long)]
@@ -127,25 +127,13 @@ fn init(options: Init) -> Result<()> {
 fn run(options: Run) -> Result<()> {
     let output = parser::parse(&options.config)?;
 
-    // Generate a Component with an optional finished String.
-    use token::*;
     let components = output
         .iter()
-        .map(|component| match component {
-            Token::Char(c) => component::character::display(*c),
-            Token::Style(style) => component::style::display(&style, &options.shell),
-            Token::Cwd(style) => component::cwd::display(&style),
-            Token::GitBranch => component::git_branch::display(),
-            Token::GitCommit => component::git_commit::display(),
-            Token::GitStash => component::git_stash::display(),
-            Token::Jobs => component::jobs::display(options.jobs()),
-        })
+        .map(|component| component::run(component, &options))
         .collect();
 
-    // Squash any characters we don't need where a component has returned None.
     let components = component::squash(components);
 
-    // Print components.
     for component in components {
         print!("{}", component.unwrap());
     }
