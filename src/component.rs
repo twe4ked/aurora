@@ -69,18 +69,19 @@ pub fn squash(components: Vec<Option<Component>>) -> Vec<Component> {
         | Some(Component::Style(style::Style::Color(_))) = &group.last().unwrap()
         {
             // End current group
-            group = filter(group);
+            filter(&mut group);
             ret.append(&mut group);
         }
     }
 
     // End the final group
-    ret.append(&mut filter(group));
+    filter(&mut group);
+    ret.append(&mut group);
 
     ret.0
 }
 
-fn filter(group: Vec<Option<Component>>) -> Vec<Option<Component>> {
+fn filter(group: &mut Vec<Option<Component>>) {
     let group_contains_some_value = group.iter().any(|c| match c {
         Some(Component::Style(_)) | Some(Component::Char(_)) => false,
         Some(_) => true,
@@ -97,19 +98,14 @@ fn filter(group: Vec<Option<Component>>) -> Vec<Option<Component>> {
         _ => false,
     });
 
-    if !group_contains_none_value
+    if !(!group_contains_none_value
         || group_contains_all_char_and_or_color
-        || group_contains_some_value
+        || group_contains_some_value)
     {
-        group
-    } else {
-        group
-            .into_iter()
-            .filter(|c| match c {
-                Some(Component::Char(_)) | None => false,
-                _ => true,
-            })
-            .collect()
+        group.retain(|c| match c {
+            Some(Component::Char(_)) | None => false,
+            _ => true,
+        });
     }
 }
 
@@ -182,20 +178,21 @@ mod tests {
 
     #[test]
     fn test_filter_just_char() {
-        assert_eq!(
-            filter(vec![Some(Component::Char("a keep".to_string()))]),
-            vec![Some(Component::Char("a keep".to_string()))]
-        );
+        let mut group = vec![Some(Component::Char("a keep".to_string()))];
+        filter(&mut group);
+        assert_eq!(group, vec![Some(Component::Char("a keep".to_string()))]);
     }
 
     #[test]
     fn test_filter_just_char_ignores_color() {
+        let mut group = vec![
+            Some(Component::Style(Style::Color("green".to_string()))),
+            Some(Component::Char("a keep".to_string())),
+            Some(Component::Style(Style::Reset("reset".to_string()))),
+        ];
+        filter(&mut group);
         assert_eq!(
-            filter(vec![
-                Some(Component::Style(Style::Color("green".to_string()))),
-                Some(Component::Char("a keep".to_string())),
-                Some(Component::Style(Style::Reset("reset".to_string()))),
-            ]),
+            group,
             vec![
                 Some(Component::Style(Style::Color("green".to_string()))),
                 Some(Component::Char("a keep".to_string())),
@@ -206,11 +203,13 @@ mod tests {
 
     #[test]
     fn test_filter_char_and_cwd() {
+        let mut group = vec![
+            Some(Component::Char("a keep".to_string())),
+            Some(Component::Cwd("b keep".to_string())),
+        ];
+        filter(&mut group);
         assert_eq!(
-            filter(vec![
-                Some(Component::Char("a keep".to_string())),
-                Some(Component::Cwd("b keep".to_string())),
-            ]),
+            group,
             vec![
                 Some(Component::Char("a keep".to_string())),
                 Some(Component::Cwd("b keep".to_string())),
@@ -220,13 +219,15 @@ mod tests {
 
     #[test]
     fn test_filter_char_and_cwd_ignores_color() {
+        let mut group = vec![
+            Some(Component::Style(Style::Color("green".to_string()))),
+            Some(Component::Char("a keep".to_string())),
+            Some(Component::Cwd("b keep".to_string())),
+            Some(Component::Style(Style::Reset("reset".to_string()))),
+        ];
+        filter(&mut group);
         assert_eq!(
-            filter(vec![
-                Some(Component::Style(Style::Color("green".to_string()))),
-                Some(Component::Char("a keep".to_string())),
-                Some(Component::Cwd("b keep".to_string())),
-                Some(Component::Style(Style::Reset("reset".to_string()))),
-            ]),
+            group,
             vec![
                 Some(Component::Style(Style::Color("green".to_string()))),
                 Some(Component::Char("a keep".to_string())),
@@ -238,21 +239,22 @@ mod tests {
 
     #[test]
     fn test_filter_char_and_empty() {
-        assert_eq!(
-            filter(vec![Some(Component::Char("a keep".to_string())), None,]),
-            vec![]
-        );
+        let mut group = vec![Some(Component::Char("a keep".to_string())), None];
+        filter(&mut group);
+        assert_eq!(group, vec![]);
     }
 
     #[test]
     fn test_filter_char_and_empty_ignores_color() {
+        let mut group = vec![
+            Some(Component::Style(Style::Color("green".to_string()))),
+            Some(Component::Char("a keep".to_string())),
+            None,
+            Some(Component::Style(Style::Reset("reset".to_string()))),
+        ];
+        filter(&mut group);
         assert_eq!(
-            filter(vec![
-                Some(Component::Style(Style::Color("green".to_string()))),
-                Some(Component::Char("a keep".to_string())),
-                None,
-                Some(Component::Style(Style::Reset("reset".to_string()))),
-            ]),
+            group,
             vec![
                 Some(Component::Style(Style::Color("green".to_string()))),
                 Some(Component::Style(Style::Reset("reset".to_string()))),
@@ -262,14 +264,16 @@ mod tests {
 
     #[test]
     fn test_filter_char_cwd_and_empty() {
+        let mut group = vec![
+            Some(Component::Style(Style::Color("green".to_string()))),
+            Some(Component::Char("a keep".to_string())),
+            Some(Component::Cwd("b keep".to_string())),
+            None,
+            Some(Component::Style(Style::Reset("reset".to_string()))),
+        ];
+        filter(&mut group);
         assert_eq!(
-            filter(vec![
-                Some(Component::Style(Style::Color("green".to_string()))),
-                Some(Component::Char("a keep".to_string())),
-                Some(Component::Cwd("b keep".to_string())),
-                None,
-                Some(Component::Style(Style::Reset("reset".to_string()))),
-            ]),
+            group,
             vec![
                 Some(Component::Style(Style::Color("green".to_string()))),
                 Some(Component::Char("a keep".to_string())),
