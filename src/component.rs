@@ -66,16 +66,25 @@ pub fn squash(components: Vec<Option<Component>>) -> Vec<Component> {
         group.push(component);
 
         match &group.last().unwrap() {
-            // End group
-            Some(Component::Style(style::Style::Reset(_))) => {
-                group = filter(group);
-                ret.append(&mut group);
-            }
+            Some(Component::Style(style)) => {
+                match style {
+                    // End group
+                    style::Style::Reset(_) => {
+                        group = filter(group);
+                        ret.append(&mut group);
+                    }
 
-            // If we're already in a group, let's end the current one, and start a new one.
-            Some(Component::Style(style::Style::Color(_))) => {
-                if !group.is_empty() {
-                    ret.append(&mut group);
+                    style::Style::Color(_) => {
+                        if !group.is_empty() {
+                            // If we're already in a group, let's end the current one, and start a
+                            // new one.
+                            ret.append(&mut group);
+                        } else {
+                            // otherwise we're already starting a new group and the variable is
+                            // empty... but it can't be empty because we've just added a component.
+                            unreachable!()
+                        }
+                    }
                 }
             }
 
