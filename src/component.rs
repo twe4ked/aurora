@@ -50,7 +50,16 @@ impl fmt::Display for Component {
 
 // A group is something between a Style::Color and a Style::Reset.
 pub fn squash(components: Vec<Option<Component>>) -> Vec<Component> {
-    let mut ret: Vec<Component> = Vec::new();
+    struct Ret(Vec<Component>);
+
+    impl Ret {
+        fn append(&mut self, group: &mut Vec<Option<Component>>) {
+            self.0
+                .append(&mut group.drain(0..).filter_map(|c| c).collect());
+        }
+    }
+
+    let mut ret = Ret(Vec::new());
     let mut group: Vec<Option<Component>> = Vec::new();
 
     for component in components {
@@ -64,7 +73,7 @@ pub fn squash(components: Vec<Option<Component>>) -> Vec<Component> {
                 // End group
                 group = filter(group);
                 group.push(component);
-                ret.append(&mut group.drain(0..).filter_map(|c| c).collect());
+                ret.append(&mut group);
             }
 
             Some(Component::Style(style::Style::Color(_c))) => {
@@ -72,7 +81,7 @@ pub fn squash(components: Vec<Option<Component>>) -> Vec<Component> {
 
                 // If we're already in a group, let's end the current one, and start a new one.
                 if !group.is_empty() {
-                    ret.append(&mut group.drain(0..).filter_map(|c| c).collect());
+                    ret.append(&mut group);
                 }
             }
 
@@ -81,8 +90,8 @@ pub fn squash(components: Vec<Option<Component>>) -> Vec<Component> {
     }
 
     group = filter(group);
-    ret.append(&mut group.into_iter().filter_map(|c| c).collect());
-    ret
+    ret.append(&mut group);
+    ret.0
 }
 
 fn filter(group: Vec<Option<Component>>) -> Vec<Option<Component>> {
