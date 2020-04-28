@@ -1,7 +1,7 @@
 use crate::component::Component;
 
 pub fn display() -> Option<Component> {
-    let repository = crate::GIT_REPOSITORY.lock().expect("poisoned");
+    let repository = aurora_prompt::GIT_REPOSITORY.lock().expect("poisoned");
     match &*repository {
         Some(r) => {
             let head = r.head();

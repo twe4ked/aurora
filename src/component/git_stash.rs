@@ -1,7 +1,7 @@
 use crate::component::Component;
 
 pub fn display() -> Option<Component> {
-    let mut repository = crate::GIT_REPOSITORY.lock().expect("poisoned");
+    let mut repository = aurora_prompt::GIT_REPOSITORY.lock().expect("poisoned");
     match &mut *repository {
         Some(ref mut r) => {
             let mut count = 0;
