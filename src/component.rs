@@ -63,29 +63,23 @@ pub fn squash(components: Vec<Option<Component>>) -> Vec<Component> {
     let mut group: Vec<Option<Component>> = Vec::new();
 
     for component in components {
-        match &component {
-            Some(Component::Char(_c)) => {
-                // Store every Char in the group, we're not sure if we want to squash them yet.
-                group.push(component);
-            }
+        group.push(component);
 
-            Some(Component::Style(style::Style::Reset(_c))) => {
-                // End group
-                group.push(component);
+        match &group.last().unwrap() {
+            // End group
+            Some(Component::Style(style::Style::Reset(_))) => {
                 group = filter(group);
                 ret.append(&mut group);
             }
 
-            Some(Component::Style(style::Style::Color(_c))) => {
-                group.push(component);
-
-                // If we're already in a group, let's end the current one, and start a new one.
+            // If we're already in a group, let's end the current one, and start a new one.
+            Some(Component::Style(style::Style::Color(_))) => {
                 if !group.is_empty() {
                     ret.append(&mut group);
                 }
             }
 
-            _ => group.push(component),
+            _ => {}
         }
     }
 
