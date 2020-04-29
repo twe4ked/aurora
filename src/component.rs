@@ -1,6 +1,7 @@
 use std::fmt;
 
 use crate::token::Token;
+use crate::Shell;
 
 pub mod character;
 pub mod cwd;
@@ -21,17 +22,21 @@ pub enum Component {
     Jobs(String),
 }
 
-pub fn components_from_tokens(tokens: &[Token], options: &crate::Run) -> Vec<Component> {
+pub fn components_from_tokens(
+    tokens: &[Token],
+    shell: &Shell,
+    jobs: Option<String>,
+) -> Vec<Component> {
     let components = tokens
         .iter()
         .map(|token| match token {
             Token::Char(c) => character::display(*c),
-            Token::Style(style) => style::display(&style, &options.shell),
+            Token::Style(style) => style::display(&style, &shell),
             Token::Cwd(style) => cwd::display(&style),
             Token::GitBranch => git_branch::display(),
             Token::GitCommit => git_commit::display(),
             Token::GitStash => git_stash::display(),
-            Token::Jobs => jobs::display(options.jobs()),
+            Token::Jobs => jobs::display(jobs.clone()),
         })
         .collect();
 
@@ -132,7 +137,7 @@ fn filter(group: &mut Vec<Option<Component>>) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::component::style::Style;
+    use style::Style;
 
     #[test]
     fn test_squash_keep_1() {

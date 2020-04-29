@@ -1,7 +1,4 @@
-mod component;
-mod error;
-mod parser;
-mod token;
+use aurora_prompt::Shell;
 
 use anyhow::{Context, Result};
 use clap::Clap;
@@ -51,24 +48,6 @@ struct Init {
     config: String,
 }
 
-#[derive(Debug)]
-pub enum Shell {
-    Zsh,
-    Bash,
-}
-
-impl std::str::FromStr for Shell {
-    type Err = &'static str;
-
-    fn from_str(input: &str) -> std::result::Result<Self, Self::Err> {
-        match input {
-            "zsh" => Ok(Shell::Zsh),
-            "bash" => Ok(Shell::Bash),
-            _ => Err("valid options are: bash, zsh"),
-        }
-    }
-}
-
 fn main() {
     let options = Options::parse();
 
@@ -89,11 +68,9 @@ fn init(options: Init) -> Result<()> {
     };
 
     let path = std::env::current_exe().with_context(|| "could not return path to executable")?;
-    let command = format!("\"{}\"", path.display());
-    let script = script.replace("__CMD__", &command);
 
-    let config = format!("'{}'", options.config);
-    let script = script.replace("__CONFIG__", &config);
+    let script = script.replace("__CMD__", &format!("\"{}\"", path.display()));
+    let script = script.replace("__CONFIG__", &format!("'{}'", options.config));
 
     print!("{}", script);
 
@@ -101,13 +78,13 @@ fn init(options: Init) -> Result<()> {
 }
 
 fn run(options: Run) -> Result<()> {
+    use aurora_prompt::component;
+    use aurora_prompt::parser;
+
     let tokens = parser::parse(&options.config)?;
-
-    let components = component::components_from_tokens(&tokens, &options);
-
+    let components = component::components_from_tokens(&tokens, &options.shell, options.jobs());
     for component in components {
         print!("{}", component);
     }
-
     Ok(())
 }

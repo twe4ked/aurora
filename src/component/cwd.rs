@@ -10,7 +10,7 @@ pub enum CwdStyle {
 }
 
 pub fn display(style: &CwdStyle) -> Option<Component> {
-    let current_dir = aurora_prompt::CURRENT_DIR.lock().expect("poisoned");
+    let current_dir = crate::CURRENT_DIR.lock().expect("poisoned");
     Some(Component::Cwd(
         cwd(style, &current_dir).unwrap_or_else(|_| long(&current_dir).unwrap()),
     ))
@@ -24,7 +24,7 @@ fn cwd(style: &CwdStyle, current_dir: &PathBuf) -> Result<String, Error> {
         }
         CwdStyle::Short => {
             let home_dir = dirs::home_dir().unwrap_or_default();
-            let repository = aurora_prompt::GIT_REPOSITORY.lock().expect("poisoned");
+            let repository = crate::GIT_REPOSITORY.lock().expect("poisoned");
             let repository = match &*repository {
                 Some(r) => Some(r.path()),
                 None => None,
