@@ -4,26 +4,28 @@ use anyhow::Result;
 use nom::branch::alt;
 use nom::bytes::complete::tag;
 use nom::character::complete::none_of;
+use nom::combinator::opt;
 use nom::multi::many0;
 use nom::IResult;
 
 fn cwd(input: &str) -> IResult<&str, Token> {
     let (input, _) = tag("cwd")(input)?;
-    let style = CwdStyle::Default;
-    Ok((input, Token::Cwd(style)))
-}
 
-fn cwd_with_style(input: &str) -> IResult<&str, Token> {
-    let (input, _) = tag("cwd style=")(input)?;
-    let (input, output) = alt((tag("default"), tag("short"), tag("long")))(input)?;
-    let style = match output {
-        "default" => CwdStyle::Default,
-        "short" => CwdStyle::Short,
-        "long" => CwdStyle::Long,
-        _ => panic!("invalid style"),
-    };
-
-    Ok((input, Token::Cwd(style)))
+    // TODO: Turn this into a generic k/v pair parser
+    let (input, output) = opt(tag(" style="))(input)?;
+    match output {
+        Some(_) => {
+            let (input, output) = alt((tag("default"), tag("short"), tag("long")))(input)?;
+            let style = match output {
+                "default" => CwdStyle::Default,
+                "short" => CwdStyle::Short,
+                "long" => CwdStyle::Long,
+                _ => panic!("invalid style"),
+            };
+            Ok((input, Token::Cwd(style)))
+        }
+        None => Ok((input, Token::Cwd(CwdStyle::Default))),
+    }
 }
 
 fn any_char_except_opening_brace(input: &str) -> IResult<&str, Token> {
@@ -99,15 +101,7 @@ fn jobs(input: &str) -> IResult<&str, Token> {
 fn component(input: &str) -> IResult<&str, Token> {
     let (input, _) = tag("{")(input)?;
 
-    let (input, component) = alt((
-        cwd_with_style,
-        cwd,
-        style,
-        git_branch,
-        git_commit,
-        git_stash,
-        jobs,
-    ))(input)?;
+    let (input, component) = alt((cwd, style, git_branch, git_commit, git_stash, jobs))(input)?;
 
     let (input, _) = tag("}")(input)?;
 
