@@ -28,9 +28,14 @@ fn cwd(input: &str) -> IResult<&str, Token> {
     }
 }
 
-fn any_char_except_opening_brace(input: &str) -> IResult<&str, Token> {
+fn any_char_except_opening_brace(input: &str) -> IResult<&str, Vec<Token>> {
     let (input, output) = none_of("{")(input)?;
-    Ok((input, Token::Char(output)))
+    Ok((input, vec![Token::Char(output)]))
+}
+
+fn escaped_opening_brace(input: &str) -> IResult<&str, Vec<Token>> {
+    let (input, _) = tag("{{")(input)?;
+    Ok((input, vec![Token::Char('{'), Token::Char('{')]))
 }
 
 fn style(input: &str) -> IResult<&str, Token> {
@@ -98,20 +103,22 @@ fn jobs(input: &str) -> IResult<&str, Token> {
     Ok((input, Token::Jobs))
 }
 
-fn component(input: &str) -> IResult<&str, Token> {
+fn component(input: &str) -> IResult<&str, Vec<Token>> {
     let (input, _) = tag("{")(input)?;
-
     let (input, component) = alt((cwd, style, git_branch, git_commit, git_stash, jobs))(input)?;
-
     let (input, _) = tag("}")(input)?;
 
-    Ok((input, component))
+    Ok((input, vec![component]))
 }
 
 pub fn parse(input: &str) -> Result<Vec<Token>> {
-    many0(alt((any_char_except_opening_brace, component)))(input)
-        .map(|(_, tokens)| Ok(tokens))
-        .unwrap_or(Err(anyhow::anyhow!("parse error")))
+    many0(alt((
+        any_char_except_opening_brace,
+        escaped_opening_brace,
+        component,
+    )))(input)
+    .map(|(_, tokens)| Ok(tokens.into_iter().flatten().collect()))
+    .unwrap_or(Err(anyhow::anyhow!("parse error")))
 }
 
 #[cfg(test)]
@@ -143,6 +150,32 @@ mod tests {
         assert_eq!(
             parse(&"{cwd style=long}").unwrap(),
             vec![Token::Cwd(CwdStyle::Long)]
+        );
+    }
+
+    #[test]
+    fn it_allows_escaped_braces_as_char() {
+        assert_eq!(
+            parse(&"{{cwd").unwrap(),
+            vec![
+                Token::Char('{'),
+                Token::Char('{'),
+                Token::Char('c'),
+                Token::Char('w'),
+                Token::Char('d'),
+            ]
+        );
+
+        assert_eq!(
+            parse(&"{{cwd{cwd}").unwrap(),
+            vec![
+                Token::Char('{'),
+                Token::Char('{'),
+                Token::Char('c'),
+                Token::Char('w'),
+                Token::Char('d'),
+                Token::Cwd(CwdStyle::Default),
+            ]
         );
     }
 }
