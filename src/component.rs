@@ -27,18 +27,46 @@ pub fn components_from_tokens(
     shell: &Shell,
     jobs: Option<String>,
 ) -> Vec<Component> {
-    let components = tokens
-        .iter()
-        .map(|token| match token {
+    let mut components = Vec::new();
+    let mut tokens = tokens.into_iter().peekable();
+
+    while let Some(token) = tokens.next() {
+        let component = match token {
             Token::Char(c) => character::display(*c),
             Token::Style(style) => style::display(&style, &shell),
-            Token::Cwd(style) => cwd::display(&style),
+            Token::KeyValue(_, _) => unreachable!("invalid key/value pair"),
+            Token::Cwd => {
+                use crate::component::cwd::CwdStyle;
+
+                let style = if let Some(Token::KeyValue(_, _)) = tokens.peek() {
+                    if let Token::KeyValue(key, value) = tokens.next().unwrap() {
+                        if &key == &"style" {
+                            match value.as_ref() {
+                                "default" => CwdStyle::Default,
+                                "short" => CwdStyle::Short,
+                                "long" => CwdStyle::Long,
+                                _ => panic!("invalid style"),
+                            }
+                        } else {
+                            panic!("invalid key: {}", key);
+                        }
+                    } else {
+                        unreachable!();
+                    }
+                } else {
+                    CwdStyle::Default
+                };
+
+                cwd::display(&style)
+            }
             Token::GitBranch => git_branch::display(),
             Token::GitCommit => git_commit::display(),
             Token::GitStash => git_stash::display(),
             Token::Jobs => jobs::display(jobs.clone()),
-        })
-        .collect();
+        };
+
+        components.push(component);
+    }
 
     squash(components)
 }

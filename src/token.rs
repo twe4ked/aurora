@@ -1,7 +1,5 @@
 //! Tokens are parsed from the users provided configuration.
 
-use crate::component::cwd;
-
 #[derive(Debug, PartialEq)]
 pub enum StyleToken {
     Black,
@@ -26,7 +24,8 @@ pub enum StyleToken {
 pub enum Token {
     Char(char),
     Style(StyleToken),
-    Cwd(cwd::CwdStyle),
+    Cwd,
+    KeyValue(String, String),
     GitBranch,
     GitCommit,
     GitStash,

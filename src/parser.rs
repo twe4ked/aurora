@@ -1,31 +1,15 @@
-use crate::component::cwd::CwdStyle;
 use crate::token::{StyleToken, Token};
 use anyhow::Result;
 use nom::branch::alt;
 use nom::bytes::complete::tag;
-use nom::character::complete::none_of;
+use nom::character::complete::{none_of, space0};
 use nom::combinator::opt;
 use nom::multi::many0;
 use nom::IResult;
 
 fn cwd(input: &str) -> IResult<&str, Token> {
     let (input, _) = tag("cwd")(input)?;
-
-    // TODO: Turn this into a generic k/v pair parser
-    let (input, output) = opt(tag(" style="))(input)?;
-    match output {
-        Some(_) => {
-            let (input, output) = alt((tag("default"), tag("short"), tag("long")))(input)?;
-            let style = match output {
-                "default" => CwdStyle::Default,
-                "short" => CwdStyle::Short,
-                "long" => CwdStyle::Long,
-                _ => panic!("invalid style"),
-            };
-            Ok((input, Token::Cwd(style)))
-        }
-        None => Ok((input, Token::Cwd(CwdStyle::Default))),
-    }
+    Ok((input, Token::Cwd))
 }
 
 fn any_char_except_opening_brace(input: &str) -> IResult<&str, Vec<Token>> {
@@ -103,12 +87,36 @@ fn jobs(input: &str) -> IResult<&str, Token> {
     Ok((input, Token::Jobs))
 }
 
+fn key_values(input: &str) -> IResult<&str, Vec<Token>> {
+    let (input, _) = space0(input)?;
+    let (input, key) = many0(none_of("}="))(input)?;
+    let (input, _) = opt(tag("="))(input)?;
+    let (input, value) = many0(none_of("}"))(input)?;
+
+    use std::iter::FromIterator;
+
+    if !key.is_empty() && !value.is_empty() {
+        Ok((
+            input,
+            vec![Token::KeyValue(
+                String::from_iter(key),
+                String::from_iter(value),
+            )],
+        ))
+    } else {
+        Ok((input, Vec::new()))
+    }
+}
+
 fn component(input: &str) -> IResult<&str, Vec<Token>> {
     let (input, _) = tag("{")(input)?;
     let (input, component) = alt((cwd, style, git_branch, git_commit, git_stash, jobs))(input)?;
+    let (input, mut key_values) = key_values(input)?;
     let (input, _) = tag("}")(input)?;
 
-    Ok((input, vec![component]))
+    let mut components = vec![component];
+    components.append(&mut key_values);
+    Ok((input, components))
 }
 
 pub fn parse(input: &str) -> Result<Vec<Token>> {
@@ -127,29 +135,31 @@ mod tests {
 
     #[test]
     fn it_works() {
-        assert_eq!(
-            parse(&"{cwd}").unwrap(),
-            vec![Token::Cwd(CwdStyle::Default)]
-        );
+        assert_eq!(parse(&"{cwd}").unwrap(), vec![Token::Cwd]);
         assert_eq!(
             parse(&"{cwd} $").unwrap(),
-            vec![
-                Token::Cwd(CwdStyle::Default),
-                Token::Char(' '),
-                Token::Char('$')
-            ]
+            vec![Token::Cwd, Token::Char(' '), Token::Char('$')]
         );
         assert_eq!(
             parse(&"{cwd style=default}").unwrap(),
-            vec![Token::Cwd(CwdStyle::Default)]
+            vec![
+                Token::Cwd,
+                Token::KeyValue("style".to_string(), "default".to_string())
+            ]
         );
         assert_eq!(
             parse(&"{cwd style=short}").unwrap(),
-            vec![Token::Cwd(CwdStyle::Short)]
+            vec![
+                Token::Cwd,
+                Token::KeyValue("style".to_string(), "short".to_string())
+            ]
         );
         assert_eq!(
             parse(&"{cwd style=long}").unwrap(),
-            vec![Token::Cwd(CwdStyle::Long)]
+            vec![
+                Token::Cwd,
+                Token::KeyValue("style".to_string(), "long".to_string())
+            ]
         );
     }
 
@@ -174,7 +184,7 @@ mod tests {
                 Token::Char('c'),
                 Token::Char('w'),
                 Token::Char('d'),
-                Token::Cwd(CwdStyle::Default),
+                Token::Cwd,
             ]
         );
     }
