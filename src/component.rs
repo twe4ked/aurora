@@ -3,7 +3,6 @@ use std::fmt;
 use crate::token::Token;
 use crate::Shell;
 
-pub mod character;
 pub mod cwd;
 pub mod git_branch;
 pub mod git_commit;
@@ -13,7 +12,6 @@ pub mod style;
 
 #[derive(Debug, PartialEq)]
 pub enum Component {
-    Char(String),
     Static(String),
     Style(style::Style),
     Cwd(String),
@@ -32,7 +30,6 @@ pub fn components_from_tokens(
 
     for token in tokens.iter() {
         let component = match token {
-            Token::Char(c) => character::display(*c),
             Token::Static(s) => Some(Component::Static(s.to_string())),
             Token::Style(style) => style::display(&style, &shell),
             Token::Component { name, options } => match name.as_ref() {
@@ -69,8 +66,7 @@ pub fn components_from_tokens(
 impl fmt::Display for Component {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Component::Char(c)
-            | Component::Style(style::Style::Color(c))
+            Component::Style(style::Style::Color(c))
             | Component::Style(style::Style::Reset(c))
             | Component::Cwd(c)
             | Component::GitBranch(c)
@@ -116,15 +112,15 @@ fn squash(components: Vec<Option<Component>>) -> Vec<Component> {
 }
 
 fn filter(group: &mut Vec<Option<Component>>) {
-    // Groups with just a Char and or Style should be kept:
+    // Groups with just a Static and or Style should be kept:
     //
     // {red}>{reset}
     //  ^   ^
-    //  |   ` Char
+    //  |   ` Static
     //  ` Style
     let group_contains_something_other_than_char_or_style = !group.iter().all(|c| match c {
-        // Check for Char
-        Some(Component::Char(_)) => true,
+        // Check for Static
+        Some(Component::Static(_)) => true,
         // Check for Style
         Some(Component::Style(_)) => true,
         _ => false,
@@ -135,10 +131,10 @@ fn filter(group: &mut Vec<Option<Component>>) {
     // {red}+{git_stash}{reset}
     //      ^ ^
     //      | `None -- git_stash returned a None
-    //      ` Char
+    //      ` Static
     let group_contains_no_value = !group.iter().any(|c| match c {
-        // We don't want to count Style or Char as we don't consider them "values"
-        Some(Component::Style(_)) | Some(Component::Char(_)) => false,
+        // We don't want to count Style or Static as we don't consider them "values"
+        Some(Component::Style(_)) | Some(Component::Static(_)) => false,
         // Everything else is a "value"
         Some(_) => true,
         // Except None
@@ -146,10 +142,10 @@ fn filter(group: &mut Vec<Option<Component>>) {
     });
 
     if group_contains_something_other_than_char_or_style && group_contains_no_value {
-        // Retain everything that isn't a Char or a None
+        // Retain everything that isn't a Static or a None
         group.retain(|c| match c {
-            // Remove Char
-            Some(Component::Char(_)) => false,
+            // Remove Static
+            Some(Component::Static(_)) => false,
             // Remove None
             None => false,
             // Keep everything else; Style, Cwd, etc.
@@ -167,36 +163,36 @@ mod tests {
     fn test_squash_keep_1() {
         let components = vec![
             // Group 1
-            Some(Component::Char("a keep".to_string())),
+            Some(Component::Static("a keep".to_string())),
             Some(Component::Cwd("b keep".to_string())),
             // Group 2 (Squash)
             Some(Component::Style(Style::Color("red".to_string()))),
             None,
-            Some(Component::Char("c squash".to_string())),
+            Some(Component::Static("c squash".to_string())),
             Some(Component::Style(Style::Reset("reset".to_string()))),
             // Group 3
             Some(Component::Style(Style::Color("green".to_string()))),
-            Some(Component::Char("d keep".to_string())),
+            Some(Component::Static("d keep".to_string())),
             // Group 4
             Some(Component::Style(Style::Color("blue".to_string()))),
-            Some(Component::Char("e keep".to_string())),
+            Some(Component::Static("e keep".to_string())),
             Some(Component::Cwd("f keep".to_string())),
         ];
         let expected = vec![
             // Group 1
-            Component::Char("a keep".to_string()),
+            Component::Static("a keep".to_string()),
             Component::Cwd("b keep".to_string()),
             // Group 2 (Squash)
             Component::Style(Style::Color("red".to_string())),
             // XXX: None,
-            // XXX: Component::Char("c squash".to_string()),
+            // XXX: Component::Static("c squash".to_string()),
             Component::Style(Style::Reset("reset".to_string())),
             // Group 3
             Component::Style(Style::Color("green".to_string())),
-            Component::Char("d keep".to_string()),
+            Component::Static("d keep".to_string()),
             // Group 4
             Component::Style(Style::Color("blue".to_string())),
-            Component::Char("e keep".to_string()),
+            Component::Static("e keep".to_string()),
             Component::Cwd("f keep".to_string()),
         ];
         assert_eq!(squash(components), expected);
@@ -206,20 +202,20 @@ mod tests {
     fn test_squash_keep_empty_end() {
         let components = vec![
             // Group 1
-            Some(Component::Char("a keep".to_string())),
+            Some(Component::Static("a keep".to_string())),
             Some(Component::Cwd("b keep".to_string())),
             // Group 2
             Some(Component::Style(Style::Color("blue".to_string()))),
-            Some(Component::Char("c squash".to_string())),
+            Some(Component::Static("c squash".to_string())),
             None,
         ];
         let expected = vec![
             // Group 1
-            Component::Char("a keep".to_string()),
+            Component::Static("a keep".to_string()),
             Component::Cwd("b keep".to_string()),
             // Group 2
             Component::Style(Style::Color("blue".to_string())),
-            // XXX: Some(Component::Char("c squash".to_string())),
+            // XXX: Some(Component::Static("c squash".to_string())),
             // XXX: None,
         ];
         assert_eq!(squash(components), expected);
@@ -227,16 +223,16 @@ mod tests {
 
     #[test]
     fn test_filter_just_char() {
-        let mut group = vec![Some(Component::Char("a keep".to_string()))];
+        let mut group = vec![Some(Component::Static("a keep".to_string()))];
         filter(&mut group);
-        assert_eq!(group, vec![Some(Component::Char("a keep".to_string()))]);
+        assert_eq!(group, vec![Some(Component::Static("a keep".to_string()))]);
     }
 
     #[test]
     fn test_filter_just_char_ignores_color() {
         let mut group = vec![
             Some(Component::Style(Style::Color("green".to_string()))),
-            Some(Component::Char("a keep".to_string())),
+            Some(Component::Static("a keep".to_string())),
             Some(Component::Style(Style::Reset("reset".to_string()))),
         ];
         filter(&mut group);
@@ -244,7 +240,7 @@ mod tests {
             group,
             vec![
                 Some(Component::Style(Style::Color("green".to_string()))),
-                Some(Component::Char("a keep".to_string())),
+                Some(Component::Static("a keep".to_string())),
                 Some(Component::Style(Style::Reset("reset".to_string()))),
             ]
         );
@@ -253,14 +249,14 @@ mod tests {
     #[test]
     fn test_filter_char_and_cwd() {
         let mut group = vec![
-            Some(Component::Char("a keep".to_string())),
+            Some(Component::Static("a keep".to_string())),
             Some(Component::Cwd("b keep".to_string())),
         ];
         filter(&mut group);
         assert_eq!(
             group,
             vec![
-                Some(Component::Char("a keep".to_string())),
+                Some(Component::Static("a keep".to_string())),
                 Some(Component::Cwd("b keep".to_string())),
             ]
         );
@@ -270,7 +266,7 @@ mod tests {
     fn test_filter_char_and_cwd_ignores_color() {
         let mut group = vec![
             Some(Component::Style(Style::Color("green".to_string()))),
-            Some(Component::Char("a keep".to_string())),
+            Some(Component::Static("a keep".to_string())),
             Some(Component::Cwd("b keep".to_string())),
             Some(Component::Style(Style::Reset("reset".to_string()))),
         ];
@@ -279,7 +275,7 @@ mod tests {
             group,
             vec![
                 Some(Component::Style(Style::Color("green".to_string()))),
-                Some(Component::Char("a keep".to_string())),
+                Some(Component::Static("a keep".to_string())),
                 Some(Component::Cwd("b keep".to_string())),
                 Some(Component::Style(Style::Reset("reset".to_string()))),
             ]
@@ -288,7 +284,7 @@ mod tests {
 
     #[test]
     fn test_filter_char_and_empty() {
-        let mut group = vec![Some(Component::Char("a keep".to_string())), None];
+        let mut group = vec![Some(Component::Static("a keep".to_string())), None];
         filter(&mut group);
         assert_eq!(group, vec![]);
     }
@@ -297,7 +293,7 @@ mod tests {
     fn test_filter_char_and_empty_ignores_color() {
         let mut group = vec![
             Some(Component::Style(Style::Color("green".to_string()))),
-            Some(Component::Char("a keep".to_string())),
+            Some(Component::Static("a keep".to_string())),
             None,
             Some(Component::Style(Style::Reset("reset".to_string()))),
         ];
@@ -315,7 +311,7 @@ mod tests {
     fn test_filter_char_cwd_and_empty() {
         let mut group = vec![
             Some(Component::Style(Style::Color("green".to_string()))),
-            Some(Component::Char("a keep".to_string())),
+            Some(Component::Static("a keep".to_string())),
             Some(Component::Cwd("b keep".to_string())),
             None,
             Some(Component::Style(Style::Reset("reset".to_string()))),
@@ -325,7 +321,7 @@ mod tests {
             group,
             vec![
                 Some(Component::Style(Style::Color("green".to_string()))),
-                Some(Component::Char("a keep".to_string())),
+                Some(Component::Static("a keep".to_string())),
                 Some(Component::Cwd("b keep".to_string())),
                 None,
                 Some(Component::Style(Style::Reset("reset".to_string()))),

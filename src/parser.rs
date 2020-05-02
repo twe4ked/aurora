@@ -11,8 +11,8 @@ use std::collections::HashMap;
 use std::iter::FromIterator;
 
 fn any_char_except_opening_brace(input: &str) -> IResult<&str, Token> {
-    let (input, output) = none_of("{")(input)?;
-    Ok((input, Token::Char(output)))
+    let (input, output) = many1(none_of("{"))(input)?;
+    Ok((input, Token::Static(String::from_iter(output))))
 }
 
 fn escaped_opening_brace(input: &str) -> IResult<&str, Token> {
@@ -86,8 +86,7 @@ mod tests {
                     name: "cwd".to_string(),
                     options: HashMap::new(),
                 },
-                Token::Char(' '),
-                Token::Char('$')
+                Token::Static(" $".to_string())
             ]
         );
 
@@ -137,9 +136,7 @@ mod tests {
             parse(&"{{cwd").unwrap(),
             vec![
                 Token::Static("{{".to_string()),
-                Token::Char('c'),
-                Token::Char('w'),
-                Token::Char('d'),
+                Token::Static("cwd".to_string()),
             ]
         );
 
@@ -147,9 +144,7 @@ mod tests {
             parse(&"{{cwd{cwd}").unwrap(),
             vec![
                 Token::Static("{{".to_string()),
-                Token::Char('c'),
-                Token::Char('w'),
-                Token::Char('d'),
+                Token::Static("cwd".to_string()),
                 Token::Component {
                     name: "cwd".to_string(),
                     options: HashMap::new(),
