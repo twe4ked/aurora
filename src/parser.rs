@@ -28,17 +28,12 @@ fn style(input: &str) -> IResult<&str, Token> {
     Ok((input, Token::Style(output)))
 }
 
-fn key_value(input: &str) -> IResult<&str, HashMap<String, String>> {
+fn key_value(input: &str) -> IResult<&str, (String, String)> {
     let (input, _) = space0(input)?;
-    let (input, key) = many0(none_of("}="))(input)?;
-    let (input, _) = opt(tag("="))(input)?;
-    let (input, value) = many0(none_of("}"))(input)?;
-
-    let mut map = HashMap::new();
-    if !key.is_empty() && !value.is_empty() {
-        map.insert(String::from_iter(key), String::from_iter(value));
-    }
-    Ok((input, map))
+    let (input, key) = many1(none_of("}="))(input)?;
+    let (input, _) = tag("=")(input)?;
+    let (input, value) = many1(none_of("} "))(input)?;
+    Ok((input, (String::from_iter(key), String::from_iter(value))))
 }
 
 fn identifier(input: &str) -> IResult<&str, String> {
@@ -49,7 +44,8 @@ fn identifier(input: &str) -> IResult<&str, String> {
 fn component(input: &str) -> IResult<&str, Token> {
     let (input, _) = tag("{")(input)?;
     let (input, name) = identifier(input)?;
-    let (input, options) = key_value(input)?;
+    let (input, options) = many0(key_value)(input)?;
+    let options = options.into_iter().collect();
     let (input, _) = tag("}")(input)?;
     Ok((input, Token::Component { name, options }))
 }
@@ -149,6 +145,21 @@ mod tests {
                     options: HashMap::new(),
                 }
             ]
+        );
+    }
+
+    #[test]
+    fn it_parses_options() {
+        let mut options = HashMap::new();
+        options.insert("a".to_string(), "bc".to_string());
+        options.insert("d".to_string(), "12".to_string());
+
+        assert_eq!(
+            parse(&"{foo a=bc d=12}").unwrap(),
+            vec![Token::Component {
+                name: "foo".to_string(),
+                options,
+            }]
         );
     }
 }
