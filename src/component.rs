@@ -14,6 +14,7 @@ pub mod style;
 #[derive(Debug, PartialEq)]
 pub enum Component {
     Char(String),
+    Static(String),
     Style(style::Style),
     Cwd(String),
     GitBranch(String),
@@ -32,6 +33,7 @@ pub fn components_from_tokens(
     for token in tokens.iter() {
         let component = match token {
             Token::Char(c) => character::display(*c),
+            Token::Static(s) => Some(Component::Static(s.to_string())),
             Token::Style(style) => style::display(&style, &shell),
             Token::Component { name, options } => match name.as_ref() {
                 "git_branch" => git_branch::display(),
@@ -74,6 +76,7 @@ impl fmt::Display for Component {
             | Component::GitBranch(c)
             | Component::GitCommit(c)
             | Component::Jobs(c)
+            | Component::Static(c)
             | Component::GitStash(c) => write!(f, "{}", c),
         }
     }

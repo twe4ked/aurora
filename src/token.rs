@@ -56,5 +56,6 @@ pub enum Token {
         options: HashMap<String, String>,
     },
     Char(char),
+    Static(String),
     Style(StyleToken),
 }

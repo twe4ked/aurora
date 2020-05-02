@@ -16,8 +16,8 @@ fn any_char_except_opening_brace(input: &str) -> IResult<&str, Vec<Token>> {
 }
 
 fn escaped_opening_brace(input: &str) -> IResult<&str, Vec<Token>> {
-    let (input, _) = tag("{{")(input)?;
-    Ok((input, vec![Token::Char('{'), Token::Char('{')]))
+    let (input, output) = tag("{{")(input)?;
+    Ok((input, vec![Token::Static(output.to_string())]))
 }
 
 fn style(input: &str) -> IResult<&str, Vec<Token>> {
@@ -136,8 +136,7 @@ mod tests {
         assert_eq!(
             parse(&"{{cwd").unwrap(),
             vec![
-                Token::Char('{'),
-                Token::Char('{'),
+                Token::Static("{{".to_string()),
                 Token::Char('c'),
                 Token::Char('w'),
                 Token::Char('d'),
@@ -147,8 +146,7 @@ mod tests {
         assert_eq!(
             parse(&"{{cwd{cwd}").unwrap(),
             vec![
-                Token::Char('{'),
-                Token::Char('{'),
+                Token::Static("{{".to_string()),
                 Token::Char('c'),
                 Token::Char('w'),
                 Token::Char('d'),
