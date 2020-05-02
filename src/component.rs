@@ -44,7 +44,6 @@ pub fn components_from_tokens(
                     _ => return Err(anyhow::anyhow!("invalid component")),
                 };
 
-                // TODO: Test
                 if !options.is_empty() {
                     return Err(anyhow::anyhow!("invalid options"));
                 }
