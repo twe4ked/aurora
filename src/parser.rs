@@ -63,7 +63,7 @@ pub fn parse(input: &str) -> Result<Vec<Token>> {
         component,
     )))(input)
     .map(|(_, tokens)| Ok(tokens))
-    .unwrap_or(Err(anyhow::anyhow!("parse error")))
+    .unwrap_or_else(|_| Err(anyhow::anyhow!("parse error")))
 }
 
 #[cfg(test)]
