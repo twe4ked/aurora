@@ -22,41 +22,32 @@ pub enum Component {
 }
 
 pub fn components_from_tokens(
-    tokens: &[Token],
+    mut tokens: Vec<Token>,
     shell: &Shell,
     jobs: Option<String>,
 ) -> Vec<Component> {
     let mut components = Vec::new();
 
-    for token in tokens.iter() {
+    for token in tokens.iter_mut() {
         let component = match token {
             Token::Static(s) => Some(Component::Static(s.to_string())),
             Token::Style(style) => style::display(&style, &shell),
-            Token::Component { name, options } => match name.as_ref() {
-                "git_branch" => git_branch::display(),
-                "git_commit" => git_commit::display(),
-                "git_stash" => git_stash::display(),
-                "jobs" => jobs::display(jobs.clone()),
-                "cwd" => {
-                    use crate::component::cwd::CwdStyle;
+            Token::Component { name, options } => {
+                let c = match name.as_ref() {
+                    "git_branch" => git_branch::display(),
+                    "git_commit" => git_commit::display(),
+                    "git_stash" => git_stash::display(),
+                    "jobs" => jobs::display(jobs.clone()),
+                    "cwd" => cwd::display(options.remove("style")),
+                    _ => panic!("invalid component"),
+                };
 
-                    let style = if let Some(value) = options.get("style") {
-                        match value.as_ref() {
-                            "default" => CwdStyle::Default,
-                            "short" => CwdStyle::Short,
-                            "long" => CwdStyle::Long,
-                            _ => panic!("invalid style"),
-                        }
-                    } else {
-                        CwdStyle::Default
-                    };
+                // TODO: Test
+                assert!(options.is_empty(), "invalid options");
 
-                    cwd::display(&style)
-                }
-                _ => panic!("invalid component"),
-            },
+                c
+            }
         };
-
         components.push(component);
     }
 

@@ -82,7 +82,7 @@ fn run(options: Run) -> Result<()> {
     use aurora_prompt::parser;
 
     let tokens = parser::parse(&options.config)?;
-    let components = component::components_from_tokens(&tokens, &options.shell, options.jobs());
+    let components = component::components_from_tokens(tokens, &options.shell, options.jobs());
     for component in components {
         print!("{}", component);
     }

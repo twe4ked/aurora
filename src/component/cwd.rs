@@ -9,10 +9,21 @@ pub enum CwdStyle {
     Short,
 }
 
-pub fn display(style: &CwdStyle) -> Option<Component> {
+pub fn display(style: Option<String>) -> Option<Component> {
+    let style = if let Some(value) = style {
+        match value.as_ref() {
+            "default" => CwdStyle::Default,
+            "short" => CwdStyle::Short,
+            "long" => CwdStyle::Long,
+            _ => panic!("invalid style"),
+        }
+    } else {
+        CwdStyle::Default
+    };
+
     let current_dir = crate::CURRENT_DIR.lock().expect("poisoned");
     Some(Component::Cwd(
-        cwd(style, &current_dir).unwrap_or_else(|_| long(&current_dir).unwrap()),
+        cwd(&style, &current_dir).unwrap_or_else(|_| long(&current_dir).unwrap()),
     ))
 }
 
