@@ -3,7 +3,7 @@ use anyhow::Result;
 use nom::branch::alt;
 use nom::bytes::complete::tag;
 use nom::character::complete::{none_of, one_of, space0};
-use nom::combinator::opt;
+use nom::combinator::{map_res, opt};
 use nom::multi::{many0, many1};
 use nom::sequence::{preceded, terminated};
 use nom::IResult;
@@ -20,53 +20,12 @@ fn escaped_opening_brace(input: &str) -> IResult<&str, Vec<Token>> {
     Ok((input, vec![Token::Char('{'), Token::Char('{')]))
 }
 
-fn color(input: &str) -> IResult<&str, &str> {
-    alt((
-        tag("black"),
-        tag("dark_grey"),
-        tag("blue"),
-        tag("dark_blue"),
-        tag("green"),
-        tag("dark_green"),
-        tag("red"),
-        tag("dark_red"),
-        tag("cyan"),
-        tag("dark_cyan"),
-        tag("magenta"),
-        tag("dark_magenta"),
-        tag("yellow"),
-        tag("dark_yellow"),
-        tag("white"),
-        tag("reset"),
-    ))(input)
-}
-
 fn style(input: &str) -> IResult<&str, Vec<Token>> {
-    use StyleToken::*;
-
-    let (input, output) = terminated(preceded(tag("{"), color), tag("}"))(input)?;
-
-    let style = match output {
-        "black" => Black,
-        "dark_grey" => DarkGrey,
-        "blue" => Blue,
-        "dark_blue" => DarkBlue,
-        "green" => Green,
-        "dark_green" => DarkGreen,
-        "red" => Red,
-        "dark_red" => DarkRed,
-        "cyan" => Cyan,
-        "dark_cyan" => DarkCyan,
-        "magenta" => Magenta,
-        "dark_magenta" => DarkMagenta,
-        "yellow" => Yellow,
-        "dark_yellow" => DarkYellow,
-        "white" => White,
-        "reset" => Reset,
-        _ => unreachable!(),
-    };
-
-    Ok((input, vec![Token::Style(style)]))
+    let (input, output) = map_res(
+        terminated(preceded(tag("{"), identifier), tag("}")),
+        |s: String| s.parse::<StyleToken>(),
+    )(input)?;
+    Ok((input, vec![Token::Style(output)]))
 }
 
 fn key_value(input: &str) -> IResult<&str, HashMap<String, String>> {
