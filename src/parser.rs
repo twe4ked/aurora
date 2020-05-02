@@ -10,22 +10,22 @@ use nom::IResult;
 use std::collections::HashMap;
 use std::iter::FromIterator;
 
-fn any_char_except_opening_brace(input: &str) -> IResult<&str, Vec<Token>> {
+fn any_char_except_opening_brace(input: &str) -> IResult<&str, Token> {
     let (input, output) = none_of("{")(input)?;
-    Ok((input, vec![Token::Char(output)]))
+    Ok((input, Token::Char(output)))
 }
 
-fn escaped_opening_brace(input: &str) -> IResult<&str, Vec<Token>> {
+fn escaped_opening_brace(input: &str) -> IResult<&str, Token> {
     let (input, output) = tag("{{")(input)?;
-    Ok((input, vec![Token::Static(output.to_string())]))
+    Ok((input, Token::Static(output.to_string())))
 }
 
-fn style(input: &str) -> IResult<&str, Vec<Token>> {
+fn style(input: &str) -> IResult<&str, Token> {
     let (input, output) = map_res(
         terminated(preceded(tag("{"), identifier), tag("}")),
         |s: String| s.parse::<StyleToken>(),
     )(input)?;
-    Ok((input, vec![Token::Style(output)]))
+    Ok((input, Token::Style(output)))
 }
 
 fn key_value(input: &str) -> IResult<&str, HashMap<String, String>> {
@@ -46,13 +46,13 @@ fn identifier(input: &str) -> IResult<&str, String> {
     Ok((input, String::from_iter(name)))
 }
 
-fn component(input: &str) -> IResult<&str, Vec<Token>> {
+fn component(input: &str) -> IResult<&str, Token> {
     let (input, _) = tag("{")(input)?;
     let (input, name) = identifier(input)?;
     let (input, options) = key_value(input)?;
     let (input, _) = tag("}")(input)?;
 
-    Ok((input, vec![Token::Component { name, options }]))
+    Ok((input, Token::Component { name, options }))
 }
 
 pub fn parse(input: &str) -> Result<Vec<Token>> {
@@ -62,7 +62,7 @@ pub fn parse(input: &str) -> Result<Vec<Token>> {
         style,
         component,
     )))(input)
-    .map(|(_, tokens)| Ok(tokens.into_iter().flatten().collect()))
+    .map(|(_, tokens)| Ok(tokens))
     .unwrap_or(Err(anyhow::anyhow!("parse error")))
 }
 
