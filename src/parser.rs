@@ -2,7 +2,7 @@ use crate::token::{StyleToken, Token};
 use anyhow::Result;
 use nom::branch::alt;
 use nom::bytes::complete::tag;
-use nom::character::complete::{multispace0, none_of, one_of};
+use nom::character::complete::{alpha1, multispace0, none_of};
 use nom::combinator::map_res;
 use nom::multi::{many0, many1};
 use nom::sequence::{preceded, terminated};
@@ -35,8 +35,12 @@ fn key_value(input: &str) -> IResult<&str, (String, String)> {
     Ok((input, (String::from_iter(key), String::from_iter(value))))
 }
 
+fn underscore(input: &str) -> IResult<&str, &str> {
+    tag("_")(input)
+}
+
 fn identifier(input: &str) -> IResult<&str, String> {
-    let (input, name) = many1(one_of("abcdefghijkllmnopqrstuvwxyz_"))(input)?;
+    let (input, name) = many1(alt((alpha1, underscore)))(input)?;
     Ok((input, String::from_iter(name)))
 }
 
