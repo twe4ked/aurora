@@ -73,32 +73,60 @@ impl fmt::Display for Component {
 }
 
 fn into_groups(components: Vec<Option<Component>>) -> Vec<Vec<Option<Component>>> {
-    let mut groups = vec![Vec::new()];
+    struct Groups(Vec<Vec<Option<Component>>>);
+
+    impl Groups {
+        fn current_group_empty(&self) -> bool {
+            self.0.last().unwrap().is_empty()
+        }
+
+        fn add_to_current_group(&mut self, component: Option<Component>) {
+            self.0.last_mut().unwrap().push(component)
+        }
+
+        fn add_to_new_group(&mut self, component: Option<Component>) {
+            self.0.push(vec![component]);
+        }
+
+        fn start_new_group(&mut self) {
+            self.0.push(Vec::new());
+        }
+
+        fn clear_empty_groups(&mut self) {
+            self.0.retain(|g| !g.is_empty());
+        }
+
+        fn groups(self) -> Vec<Vec<Option<Component>>> {
+            self.0
+        }
+    }
+
+    let mut groups = Groups(vec![Vec::new()]);
 
     for component in components {
         match component {
             Some(Component::Style(style::Style::Color(_))) => {
-                if groups.last().unwrap().is_empty() {
+                if groups.current_group_empty() {
                     // If we're already in a new group
-                    groups.last_mut().unwrap().push(component);
+                    groups.add_to_current_group(component);
                 } else {
                     // Otherwise start a new group
-                    groups.push(vec![component]);
+                    groups.add_to_new_group(component);
                 }
             }
             Some(Component::Style(style::Style::Reset(_))) => {
                 // Add the reset style to the end of the current group
-                groups.last_mut().unwrap().push(component);
+                groups.add_to_current_group(component);
                 // Then start a new group
-                groups.push(Vec::new());
+                groups.start_new_group();
             }
             // Always push other components to the current group
-            _ => groups.last_mut().unwrap().push(component),
+            _ => groups.add_to_current_group(component),
         }
     }
 
-    groups.retain(|g| !g.is_empty());
-    groups
+    groups.clear_empty_groups();
+    groups.groups()
 }
 
 fn squash(components: Vec<Option<Component>>) -> Vec<Component> {
