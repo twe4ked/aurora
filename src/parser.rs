@@ -5,6 +5,7 @@ use nom::bytes::complete::tag;
 use nom::character::complete::{none_of, one_of, space0};
 use nom::combinator::opt;
 use nom::multi::{many0, many1};
+use nom::sequence::{preceded, terminated};
 use nom::IResult;
 use std::collections::HashMap;
 use std::iter::FromIterator;
@@ -19,11 +20,8 @@ fn escaped_opening_brace(input: &str) -> IResult<&str, Vec<Token>> {
     Ok((input, vec![Token::Char('{'), Token::Char('{')]))
 }
 
-fn style(input: &str) -> IResult<&str, Vec<Token>> {
-    use StyleToken::*;
-
-    let (input, _) = tag("{")(input)?;
-    let (input, output) = alt((
+fn color(input: &str) -> IResult<&str, &str> {
+    alt((
         tag("black"),
         tag("dark_grey"),
         tag("blue"),
@@ -40,8 +38,13 @@ fn style(input: &str) -> IResult<&str, Vec<Token>> {
         tag("dark_yellow"),
         tag("white"),
         tag("reset"),
-    ))(input)?;
-    let (input, _) = tag("}")(input)?;
+    ))(input)
+}
+
+fn style(input: &str) -> IResult<&str, Vec<Token>> {
+    use StyleToken::*;
+
+    let (input, output) = terminated(preceded(tag("{"), color), tag("}"))(input)?;
 
     let style = match output {
         "black" => Black,
