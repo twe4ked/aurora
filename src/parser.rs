@@ -51,7 +51,6 @@ fn component(input: &str) -> IResult<&str, Token> {
     let (input, name) = identifier(input)?;
     let (input, options) = key_value(input)?;
     let (input, _) = tag("}")(input)?;
-
     Ok((input, Token::Component { name, options }))
 }
 
