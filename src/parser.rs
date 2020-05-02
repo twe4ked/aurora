@@ -68,7 +68,7 @@ mod tests {
     use std::collections::HashMap;
 
     #[test]
-    fn it_works() {
+    fn it_parses_a_component() {
         assert_eq!(
             parse(&"{cwd}").unwrap(),
             vec![Token::Component {
@@ -76,6 +76,10 @@ mod tests {
                 options: HashMap::new(),
             }]
         );
+    }
+
+    #[test]
+    fn it_parses_a_component_and_static() {
         assert_eq!(
             parse(&"{cwd} $").unwrap(),
             vec![
@@ -86,7 +90,10 @@ mod tests {
                 Token::Static(" $".to_string())
             ]
         );
+    }
 
+    #[test]
+    fn it_parses_a_component_with_options() {
         let mut options = HashMap::new();
         options.insert("style".to_string(), "default".to_string());
         assert_eq!(
