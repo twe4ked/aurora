@@ -1,5 +1,7 @@
 //! Tokens are parsed from the users provided configuration.
 
+use std::collections::HashMap;
+
 #[derive(Debug, PartialEq)]
 pub enum StyleToken {
     Black,
@@ -22,12 +24,10 @@ pub enum StyleToken {
 
 #[derive(Debug, PartialEq)]
 pub enum Token {
+    Component {
+        name: String,
+        options: HashMap<String, String>,
+    },
     Char(char),
     Style(StyleToken),
-    Cwd,
-    KeyValue(String, String),
-    GitBranch,
-    GitCommit,
-    GitStash,
-    Jobs,
 }

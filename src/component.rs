@@ -28,41 +28,34 @@ pub fn components_from_tokens(
     jobs: Option<String>,
 ) -> Vec<Component> {
     let mut components = Vec::new();
-    let mut tokens = tokens.into_iter().peekable();
 
-    while let Some(token) = tokens.next() {
+    for token in tokens.iter() {
         let component = match token {
             Token::Char(c) => character::display(*c),
             Token::Style(style) => style::display(&style, &shell),
-            Token::KeyValue(_, _) => unreachable!("invalid key/value pair"),
-            Token::Cwd => {
-                use crate::component::cwd::CwdStyle;
+            Token::Component { name, options } => match name.as_ref() {
+                "git_branch" => git_branch::display(),
+                "git_commit" => git_commit::display(),
+                "git_stash" => git_stash::display(),
+                "jobs" => jobs::display(jobs.clone()),
+                "cwd" => {
+                    use crate::component::cwd::CwdStyle;
 
-                let style = if let Some(Token::KeyValue(_, _)) = tokens.peek() {
-                    if let Token::KeyValue(key, value) = tokens.next().unwrap() {
-                        if &key == &"style" {
-                            match value.as_ref() {
-                                "default" => CwdStyle::Default,
-                                "short" => CwdStyle::Short,
-                                "long" => CwdStyle::Long,
-                                _ => panic!("invalid style"),
-                            }
-                        } else {
-                            panic!("invalid key: {}", key);
+                    let style = if let Some(value) = options.get("style") {
+                        match value.as_ref() {
+                            "default" => CwdStyle::Default,
+                            "short" => CwdStyle::Short,
+                            "long" => CwdStyle::Long,
+                            _ => panic!("invalid style"),
                         }
                     } else {
-                        unreachable!();
-                    }
-                } else {
-                    CwdStyle::Default
-                };
+                        CwdStyle::Default
+                    };
 
-                cwd::display(&style)
-            }
-            Token::GitBranch => git_branch::display(),
-            Token::GitCommit => git_commit::display(),
-            Token::GitStash => git_stash::display(),
-            Token::Jobs => jobs::display(jobs.clone()),
+                    cwd::display(&style)
+                }
+                _ => panic!("invalid component"),
+            },
         };
 
         components.push(component);

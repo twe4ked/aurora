@@ -2,15 +2,12 @@ use crate::token::{StyleToken, Token};
 use anyhow::Result;
 use nom::branch::alt;
 use nom::bytes::complete::tag;
-use nom::character::complete::{none_of, space0};
+use nom::character::complete::{none_of, one_of, space0};
 use nom::combinator::opt;
-use nom::multi::many0;
+use nom::multi::{many0, many1};
 use nom::IResult;
-
-fn cwd(input: &str) -> IResult<&str, Token> {
-    let (input, _) = tag("cwd")(input)?;
-    Ok((input, Token::Cwd))
-}
+use std::collections::HashMap;
+use std::iter::FromIterator;
 
 fn any_char_except_opening_brace(input: &str) -> IResult<&str, Vec<Token>> {
     let (input, output) = none_of("{")(input)?;
@@ -22,9 +19,10 @@ fn escaped_opening_brace(input: &str) -> IResult<&str, Vec<Token>> {
     Ok((input, vec![Token::Char('{'), Token::Char('{')]))
 }
 
-fn style(input: &str) -> IResult<&str, Token> {
+fn style(input: &str) -> IResult<&str, Vec<Token>> {
     use StyleToken::*;
 
+    let (input, _) = tag("{")(input)?;
     let (input, output) = alt((
         tag("black"),
         tag("dark_grey"),
@@ -43,6 +41,7 @@ fn style(input: &str) -> IResult<&str, Token> {
         tag("white"),
         tag("reset"),
     ))(input)?;
+    let (input, _) = tag("}")(input)?;
 
     let style = match output {
         "black" => Black,
@@ -64,65 +63,41 @@ fn style(input: &str) -> IResult<&str, Token> {
         _ => unreachable!(),
     };
 
-    Ok((input, Token::Style(style)))
+    Ok((input, vec![Token::Style(style)]))
 }
 
-fn git_branch(input: &str) -> IResult<&str, Token> {
-    let (input, _) = tag("git_branch")(input)?;
-    Ok((input, Token::GitBranch))
-}
-
-fn git_commit(input: &str) -> IResult<&str, Token> {
-    let (input, _) = tag("git_commit")(input)?;
-    Ok((input, Token::GitCommit))
-}
-
-fn git_stash(input: &str) -> IResult<&str, Token> {
-    let (input, _) = tag("git_stash")(input)?;
-    Ok((input, Token::GitStash))
-}
-
-fn jobs(input: &str) -> IResult<&str, Token> {
-    let (input, _) = tag("jobs")(input)?;
-    Ok((input, Token::Jobs))
-}
-
-fn key_values(input: &str) -> IResult<&str, Vec<Token>> {
+fn key_value(input: &str) -> IResult<&str, HashMap<String, String>> {
     let (input, _) = space0(input)?;
     let (input, key) = many0(none_of("}="))(input)?;
     let (input, _) = opt(tag("="))(input)?;
     let (input, value) = many0(none_of("}"))(input)?;
 
-    use std::iter::FromIterator;
-
+    let mut map = HashMap::new();
     if !key.is_empty() && !value.is_empty() {
-        Ok((
-            input,
-            vec![Token::KeyValue(
-                String::from_iter(key),
-                String::from_iter(value),
-            )],
-        ))
-    } else {
-        Ok((input, Vec::new()))
+        map.insert(String::from_iter(key), String::from_iter(value));
     }
+    Ok((input, map))
+}
+
+fn identifier(input: &str) -> IResult<&str, String> {
+    let (input, name) = many1(one_of("abcdefghijkllmnopqrstuvwxyz_"))(input)?;
+    Ok((input, String::from_iter(name)))
 }
 
 fn component(input: &str) -> IResult<&str, Vec<Token>> {
     let (input, _) = tag("{")(input)?;
-    let (input, component) = alt((cwd, style, git_branch, git_commit, git_stash, jobs))(input)?;
-    let (input, mut key_values) = key_values(input)?;
+    let (input, name) = identifier(input)?;
+    let (input, options) = key_value(input)?;
     let (input, _) = tag("}")(input)?;
 
-    let mut components = vec![component];
-    components.append(&mut key_values);
-    Ok((input, components))
+    Ok((input, vec![Token::Component { name, options }]))
 }
 
 pub fn parse(input: &str) -> Result<Vec<Token>> {
     many0(alt((
         any_char_except_opening_brace,
         escaped_opening_brace,
+        style,
         component,
     )))(input)
     .map(|(_, tokens)| Ok(tokens.into_iter().flatten().collect()))
@@ -135,31 +110,62 @@ mod tests {
 
     #[test]
     fn it_works() {
-        assert_eq!(parse(&"{cwd}").unwrap(), vec![Token::Cwd]);
+        assert_eq!(
+            parse(&"{cwd}").unwrap(),
+            vec![Token::Component {
+                name: "cwd".to_string(),
+                options: HashMap::new(),
+            }]
+        );
         assert_eq!(
             parse(&"{cwd} $").unwrap(),
-            vec![Token::Cwd, Token::Char(' '), Token::Char('$')]
+            vec![
+                Token::Component {
+                    name: "cwd".to_string(),
+                    options: HashMap::new(),
+                },
+                Token::Char(' '),
+                Token::Char('$')
+            ]
         );
+
+        let mut options = HashMap::new();
+        options.insert("style".to_string(), "default".to_string());
         assert_eq!(
             parse(&"{cwd style=default}").unwrap(),
-            vec![
-                Token::Cwd,
-                Token::KeyValue("style".to_string(), "default".to_string())
-            ]
+            vec![Token::Component {
+                name: "cwd".to_string(),
+                options,
+            },]
         );
+
+        let mut options = HashMap::new();
+        options.insert("style".to_string(), "short".to_string());
         assert_eq!(
             parse(&"{cwd style=short}").unwrap(),
-            vec![
-                Token::Cwd,
-                Token::KeyValue("style".to_string(), "short".to_string())
-            ]
+            vec![Token::Component {
+                name: "cwd".to_string(),
+                options,
+            },]
         );
+
+        let mut options = HashMap::new();
+        options.insert("style".to_string(), "long".to_string());
         assert_eq!(
             parse(&"{cwd style=long}").unwrap(),
-            vec![
-                Token::Cwd,
-                Token::KeyValue("style".to_string(), "long".to_string())
-            ]
+            vec![Token::Component {
+                name: "cwd".to_string(),
+                options,
+            },]
+        );
+    }
+
+    #[test]
+    fn it_parses_identifiers() {
+        assert_eq!(identifier(&"cwd").unwrap().1, "cwd".to_string());
+        assert_eq!(
+            identifier(&"git_branch").unwrap().1,
+            "git_branch".to_string()
         );
     }
 
@@ -184,7 +190,10 @@ mod tests {
                 Token::Char('c'),
                 Token::Char('w'),
                 Token::Char('d'),
-                Token::Cwd,
+                Token::Component {
+                    name: "cwd".to_string(),
+                    options: HashMap::new(),
+                }
             ]
         );
     }
