@@ -72,37 +72,45 @@ impl fmt::Display for Component {
     }
 }
 
-// A group is something between a Style::Color and a Style::Reset.
-fn squash(components: Vec<Option<Component>>) -> Vec<Component> {
-    struct Ret(Vec<Component>);
-
-    impl Ret {
-        fn append(&mut self, group: &mut Vec<Option<Component>>) {
-            self.0
-                .append(&mut group.drain(0..).filter_map(|c| c).collect());
-        }
-    }
-
-    let mut ret = Ret(Vec::new());
-    let mut group: Vec<Option<Component>> = Vec::new();
+fn into_groups(components: Vec<Option<Component>>) -> Vec<Vec<Option<Component>>> {
+    let mut groups = vec![Vec::new()];
 
     for component in components {
-        group.push(component);
-
-        if let Some(Component::Style(style::Style::Reset(_)))
-        | Some(Component::Style(style::Style::Color(_))) = &group.last().unwrap()
-        {
-            // End current group
-            filter(&mut group);
-            ret.append(&mut group);
+        match component {
+            Some(Component::Style(style::Style::Color(_))) => {
+                if groups.last().unwrap().is_empty() {
+                    // If we're already in a new group
+                    groups.last_mut().unwrap().push(component);
+                } else {
+                    // Otherwise start a new group
+                    groups.push(vec![component]);
+                }
+            }
+            Some(Component::Style(style::Style::Reset(_))) => {
+                // Add the reset style to the end of the current group
+                groups.last_mut().unwrap().push(component);
+                // Then start a new group
+                groups.push(Vec::new());
+            }
+            // Always push other components to the current group
+            _ => groups.last_mut().unwrap().push(component),
         }
     }
 
-    // End the final group
-    filter(&mut group);
-    ret.append(&mut group);
+    groups.retain(|g| !g.is_empty());
+    groups
+}
 
-    ret.0
+fn squash(components: Vec<Option<Component>>) -> Vec<Component> {
+    let mut groups = into_groups(components);
+
+    let mut components = Vec::new();
+    for mut group in groups.iter_mut() {
+        filter(&mut group);
+        components.append(&mut group.drain(0..).filter_map(|c| c).collect());
+    }
+
+    components
 }
 
 fn filter(group: &mut Vec<Option<Component>>) {
@@ -340,5 +348,113 @@ mod tests {
         );
 
         assert_eq!(result.unwrap_err().to_string(), "invalid options");
+    }
+
+    #[test]
+    fn test_into_groups_single_group() {
+        let components = vec![
+            Some(Component::Style(Style::Color("green".to_string()))),
+            Some(Component::Static("a".to_string())),
+            Some(Component::Static("b".to_string())),
+            None,
+            Some(Component::Style(Style::Reset("reset".to_string()))),
+        ];
+
+        let groups = into_groups(components);
+
+        assert_eq!(
+            groups,
+            vec![vec![
+                Some(Component::Style(Style::Color("green".to_string()))),
+                Some(Component::Static("a".to_string())),
+                Some(Component::Static("b".to_string())),
+                None,
+                Some(Component::Style(Style::Reset("reset".to_string()))),
+            ],]
+        );
+    }
+
+    #[test]
+    fn test_into_groups_two_groups() {
+        let components = vec![
+            Some(Component::Style(Style::Color("green".to_string()))),
+            Some(Component::Static("a".to_string())),
+            Some(Component::Static("b".to_string())),
+            None,
+            Some(Component::Style(Style::Reset("reset".to_string()))),
+            Some(Component::Style(Style::Color("green".to_string()))),
+            Some(Component::Static("a".to_string())),
+        ];
+
+        let groups = into_groups(components);
+
+        assert_eq!(
+            groups,
+            vec![
+                vec![
+                    Some(Component::Style(Style::Color("green".to_string()))),
+                    Some(Component::Static("a".to_string())),
+                    Some(Component::Static("b".to_string())),
+                    None,
+                    Some(Component::Style(Style::Reset("reset".to_string()))),
+                ],
+                vec![
+                    Some(Component::Style(Style::Color("green".to_string()))),
+                    Some(Component::Static("a".to_string())),
+                ],
+            ]
+        );
+    }
+
+    #[test]
+    fn test_into_groups_two_groups_no_reset() {
+        let components = vec![
+            Some(Component::Style(Style::Color("green".to_string()))),
+            Some(Component::Static("a".to_string())),
+            Some(Component::Static("b".to_string())),
+            None,
+            Some(Component::Style(Style::Color("green".to_string()))),
+            Some(Component::Static("a".to_string())),
+        ];
+
+        let groups = into_groups(components);
+
+        assert_eq!(
+            groups,
+            vec![
+                vec![
+                    Some(Component::Style(Style::Color("green".to_string()))),
+                    Some(Component::Static("a".to_string())),
+                    Some(Component::Static("b".to_string())),
+                    None,
+                ],
+                vec![
+                    Some(Component::Style(Style::Color("green".to_string()))),
+                    Some(Component::Static("a".to_string())),
+                ],
+            ]
+        );
+    }
+
+    #[test]
+    fn test_into_groups_two_groups_no_color() {
+        let components = vec![
+            Some(Component::Static("a".to_string())),
+            Some(Component::Style(Style::Reset("reset".to_string()))),
+            Some(Component::Static("b".to_string())),
+        ];
+
+        let groups = into_groups(components);
+
+        assert_eq!(
+            groups,
+            vec![
+                vec![
+                    Some(Component::Static("a".to_string())),
+                    Some(Component::Style(Style::Reset("reset".to_string()))),
+                ],
+                vec![Some(Component::Static("b".to_string())),],
+            ]
+        );
     }
 }
