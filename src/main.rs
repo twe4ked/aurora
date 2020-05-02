@@ -83,7 +83,7 @@ fn run(options: Run) -> Result<()> {
 
     let tokens = parser::parse(&options.config)?;
     let components = component::components_from_tokens(tokens, &options.shell, options.jobs());
-    for component in components {
+    for component in components? {
         print!("{}", component);
     }
     Ok(())

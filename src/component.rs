@@ -1,3 +1,5 @@
+use anyhow::Result;
+
 use std::fmt;
 
 use crate::token::Token;
@@ -25,7 +27,7 @@ pub fn components_from_tokens(
     mut tokens: Vec<Token>,
     shell: &Shell,
     jobs: Option<String>,
-) -> Vec<Component> {
+) -> Result<Vec<Component>> {
     let mut components = Vec::new();
 
     for token in tokens.iter_mut() {
@@ -39,11 +41,13 @@ pub fn components_from_tokens(
                     "git_stash" => git_stash::display(),
                     "jobs" => jobs::display(jobs.clone()),
                     "cwd" => cwd::display(options.remove("style")),
-                    _ => panic!("invalid component"),
+                    _ => return Err(anyhow::anyhow!("invalid component")),
                 };
 
                 // TODO: Test
-                assert!(options.is_empty(), "invalid options");
+                if !options.is_empty() {
+                    return Err(anyhow::anyhow!("invalid options"));
+                }
 
                 c
             }
@@ -51,7 +55,7 @@ pub fn components_from_tokens(
         components.push(component);
     }
 
-    squash(components)
+    Ok(squash(components))
 }
 
 impl fmt::Display for Component {
@@ -318,5 +322,24 @@ mod tests {
                 Some(Component::Style(Style::Reset("reset".to_string()))),
             ]
         );
+    }
+
+    #[test]
+    fn test_components_from_tokens() {
+        use std::collections::HashMap;
+
+        let mut options = HashMap::new();
+        options.insert("foo".to_string(), "bar".to_string());
+
+        let result = components_from_tokens(
+            vec![Token::Component {
+                name: "jobs".to_string(),
+                options,
+            }],
+            &Shell::Zsh,
+            None,
+        );
+
+        assert_eq!(result.unwrap_err().to_string(), "invalid options");
     }
 }
