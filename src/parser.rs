@@ -29,7 +29,7 @@ fn style(input: &str) -> IResult<&str, Token> {
 
 fn key_value(input: &str) -> IResult<&str, (String, String)> {
     let (input, _) = multispace0(input)?;
-    let (input, key) = many1(none_of("}="))(input)?;
+    let (input, key) = many1(none_of("="))(input)?;
     let (input, _) = tag("=")(input)?;
     let (input, value) = many1(none_of("} "))(input)?;
     Ok((input, (String::from_iter(key), String::from_iter(value))))
