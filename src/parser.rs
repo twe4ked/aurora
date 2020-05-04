@@ -3,7 +3,7 @@ use anyhow::Result;
 use nom::branch::alt;
 use nom::bytes::complete::tag;
 use nom::character::complete::{alpha1, multispace0, none_of};
-use nom::combinator::map_res;
+use nom::combinator::{map, map_res};
 use nom::multi::{many0, many1};
 use nom::sequence::{preceded, terminated};
 use nom::IResult;
@@ -40,8 +40,9 @@ fn underscore(input: &str) -> IResult<&str, &str> {
 }
 
 fn identifier(input: &str) -> IResult<&str, String> {
-    let (input, name) = many1(alt((alpha1, underscore)))(input)?;
-    Ok((input, String::from_iter(name)))
+    map(many1(alt((alpha1, underscore))), |name: Vec<&str>| {
+        String::from_iter(name)
+    })(input)
 }
 
 fn component(input: &str) -> IResult<&str, Token> {
