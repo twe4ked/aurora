@@ -80,14 +80,14 @@ fn init(options: Init) -> Result<()> {
 }
 
 fn run(options: Run) -> Result<()> {
-    use aurora_prompt::component;
-    use aurora_prompt::parser;
+    let components = aurora_prompt::components(
+        &options.config,
+        &options.shell,
+        options.jobs(),
+        options.status,
+    )?;
 
-    let tokens = parser::parse(&options.config)?;
-    let tokens = component::evaluate_token_conditionals(tokens, options.status);
-
-    let components = component::components_from_tokens(tokens, &options.shell, options.jobs());
-    for component in components? {
+    for component in components {
         print!("{}", component);
     }
     Ok(())

@@ -1,9 +1,9 @@
-pub mod component;
+mod component;
 mod error;
-pub mod parser;
+mod parser;
 mod token;
 
-use anyhow::Context;
+use anyhow::{Context, Result};
 use git2::Repository;
 use once_cell::sync::Lazy;
 
@@ -45,4 +45,16 @@ impl std::str::FromStr for Shell {
             _ => Err("valid options are: bash, zsh"),
         }
     }
+}
+
+pub fn components(
+    config: &str,
+    shell: &Shell,
+    jobs: Option<String>,
+    status: usize,
+) -> Result<Vec<component::Component>> {
+    let tokens = parser::parse(config)?;
+    let tokens = component::evaluate_token_conditionals(tokens, status);
+
+    component::components_from_tokens(tokens, shell, jobs)
 }
