@@ -63,6 +63,14 @@ everything between a color and a `{reset}`.
 - `{white}`
 - `{reset}`
 
+## Conditionals
+
+Conditionals can be used to show and hide components and colors.
+
+```
+{if last_command_status}{cyan}${else}{red}${end}{reset}
+```
+
 ## Design Goals
 
 - Speed
