@@ -1,3 +1,5 @@
+setopt prompt_subst
+
 aurora_precmd() {
     local __status=$?
     local __jobs=$jobtexts
