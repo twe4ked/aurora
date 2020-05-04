@@ -1,5 +1,6 @@
 use anyhow::Result;
 
+use std::collections::HashMap;
 use std::fmt;
 
 use crate::token::Token;
@@ -73,35 +74,48 @@ impl fmt::Display for Component {
 }
 
 fn into_groups(components: Vec<Option<Component>>) -> Vec<Vec<Option<Component>>> {
-    struct Groups(Vec<Vec<Option<Component>>>);
+    struct Groups {
+        map: HashMap<usize, Vec<Option<Component>>>,
+        current_group_index: usize,
+    }
 
     impl Groups {
+        fn new() -> Self {
+            let mut map = HashMap::new();
+            map.insert(0, Vec::new());
+            Groups {
+                map: map,
+                current_group_index: 0,
+            }
+        }
+
         fn current_group_empty(&self) -> bool {
-            self.0.last().unwrap().is_empty()
+            match self.map.get(&self.current_group_index) {
+                Some(g) => g.is_empty(),
+                None => true,
+            }
         }
 
         fn add_to_current_group(&mut self, component: Option<Component>) {
-            self.0.last_mut().unwrap().push(component)
-        }
-
-        fn add_to_new_group(&mut self, component: Option<Component>) {
-            self.0.push(vec![component]);
+            let group = self
+                .map
+                .entry(self.current_group_index)
+                .or_insert(Vec::new());
+            group.push(component)
         }
 
         fn start_new_group(&mut self) {
-            self.0.push(Vec::new());
+            self.current_group_index += 1;
         }
 
-        fn clear_empty_groups(&mut self) {
-            self.0.retain(|g| !g.is_empty());
-        }
-
-        fn groups(self) -> Vec<Vec<Option<Component>>> {
-            self.0
+        fn groups(mut self) -> Vec<Vec<Option<Component>>> {
+            (0..=self.current_group_index)
+                .filter_map(|i| self.map.remove(&i))
+                .collect()
         }
     }
 
-    let mut groups = Groups(vec![Vec::new()]);
+    let mut groups = Groups::new();
 
     for component in components {
         match component {
@@ -111,7 +125,8 @@ fn into_groups(components: Vec<Option<Component>>) -> Vec<Vec<Option<Component>>
                     groups.add_to_current_group(component);
                 } else {
                     // Otherwise start a new group
-                    groups.add_to_new_group(component);
+                    groups.start_new_group();
+                    groups.add_to_current_group(component);
                 }
             }
             Some(Component::Style(style::Style::Reset(_))) => {
@@ -125,7 +140,6 @@ fn into_groups(components: Vec<Option<Component>>) -> Vec<Vec<Option<Component>>
         }
     }
 
-    groups.clear_empty_groups();
     groups.groups()
 }
 
