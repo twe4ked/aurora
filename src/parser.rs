@@ -3,10 +3,11 @@ use anyhow::Result;
 use nom::branch::alt;
 use nom::bytes::complete::tag;
 use nom::character::complete::{alpha1, multispace0, none_of};
-use nom::combinator::{map, map_res};
+use nom::combinator::{map, map_res, verify};
 use nom::multi::{many0, many1};
 use nom::sequence::{preceded, terminated};
 use nom::IResult;
+use std::collections::HashSet;
 use std::iter::FromIterator;
 
 fn any_char_except_opening_brace(input: &str) -> IResult<&str, Token> {
@@ -40,9 +41,14 @@ fn underscore(input: &str) -> IResult<&str, &str> {
 }
 
 fn identifier(input: &str) -> IResult<&str, String> {
-    map(many1(alt((alpha1, underscore))), |name: Vec<&str>| {
-        String::from_iter(name)
-    })(input)
+    // TODO: Move to static
+    let mut reserved = HashSet::new();
+    reserved.insert("end".to_string());
+
+    let find_ident = many1(alt((alpha1, underscore)));
+    let map_ident = map(find_ident, |ident: Vec<&str>| String::from_iter(ident));
+    let verify_ident = verify(map_ident, |ident: &str| !reserved.contains(ident));
+    verify_ident(input)
 }
 
 fn component(input: &str) -> IResult<&str, Token> {
@@ -144,6 +150,8 @@ mod tests {
             identifier(&"git_branch").unwrap().1,
             "git_branch".to_string()
         );
+
+        assert!(identifier(&"end").is_err());
     }
 
     #[test]
