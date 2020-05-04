@@ -65,9 +65,12 @@ fn tokens(input: &str) -> IResult<&str, Vec<Token>> {
 }
 
 pub fn parse(input: &str) -> Result<Vec<Token>> {
-    tokens(input)
-        .map(|(_, tokens)| Ok(tokens))
-        .unwrap_or_else(|_| Err(anyhow::anyhow!("parse error")))
+    if let Ok((input, tokens)) = tokens(input) {
+        if input.is_empty() {
+            return Ok(tokens);
+        }
+    }
+    Err(anyhow::anyhow!("parse error: {}", input))
 }
 
 #[cfg(test)]
