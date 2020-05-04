@@ -50,6 +50,22 @@ impl std::str::FromStr for StyleToken {
 }
 
 #[derive(Debug, PartialEq)]
+pub enum Condition {
+    LastCommandStatus,
+}
+
+impl std::str::FromStr for Condition {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "last_command_status" => Ok(Condition::LastCommandStatus),
+            _ => Err(()),
+        }
+    }
+}
+
+#[derive(Debug, PartialEq)]
 pub enum Token {
     Component {
         name: String,
@@ -57,4 +73,9 @@ pub enum Token {
     },
     Static(String),
     Style(StyleToken),
+    Conditional {
+        condition: Condition,
+        left: Vec<Token>,
+        right: Option<Vec<Token>>,
+    },
 }

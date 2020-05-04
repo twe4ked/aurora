@@ -1,4 +1,4 @@
-use crate::token::{StyleToken, Token};
+use crate::token::{Condition, StyleToken, Token};
 use anyhow::Result;
 use nom::branch::alt;
 use nom::bytes::complete::tag;
@@ -26,6 +26,48 @@ fn style(input: &str) -> IResult<&str, Token> {
         |s: String| s.parse::<StyleToken>(),
     )(input)?;
     Ok((input, Token::Style(output)))
+}
+
+// TODO: Handle spaces
+fn if_start(input: &str) -> IResult<&str, ()> {
+    let (input, _) = tag("{")(input)?;
+    let (input, _) = tag("if")(input)?;
+    Ok((input, ()))
+}
+
+fn if_condition(input: &str) -> IResult<&str, Condition> {
+    let (input, condition) = map_res(identifier, |s: String| s.parse::<Condition>())(input)?;
+    Ok((input, condition))
+}
+
+fn end(input: &str) -> IResult<&str, ()> {
+    let (input, _) = tag("{end}")(input)?;
+    Ok((input, ()))
+}
+
+fn conditional(input: &str) -> IResult<&str, Token> {
+    // {if condition}
+    let (input, _) = if_start(input)?;
+    let (input, _) = multispace0(input)?;
+    let (input, condition) = if_condition(input)?;
+    let (input, _) = tag("}")(input)?;
+
+    // foo bar baz
+    let (input, left) = tokens(input)?;
+
+    // TODO: {else}
+    let right = None;
+
+    // {end}
+    let (input, _) = end(input)?;
+
+    let conditional = Token::Conditional {
+        condition,
+        left,
+        right,
+    };
+
+    Ok((input, conditional))
 }
 
 fn key_value(input: &str) -> IResult<&str, (String, String)> {
@@ -67,6 +109,7 @@ fn tokens(input: &str) -> IResult<&str, Vec<Token>> {
         any_char_except_opening_brace,
         escaped_opening_brace,
         style,
+        conditional,
         component,
     )))(input)
 }
@@ -210,6 +253,18 @@ mod tests {
             vec![Token::Component {
                 name: "foo".to_string(),
                 options,
+            }]
+        );
+    }
+
+    #[test]
+    fn it_parses_conditionals() {
+        assert_eq!(
+            parse(&"{if last_command_status}left{end}").unwrap(),
+            vec![Token::Conditional {
+                condition: Condition::LastCommandStatus,
+                left: vec![Token::Static("left".to_string())],
+                right: None,
             }]
         );
     }

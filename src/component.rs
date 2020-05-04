@@ -51,6 +51,11 @@ pub fn components_from_tokens(
 
                 c
             }
+            Token::Conditional {
+                condition: _,
+                left: _,
+                right: _,
+            } => todo!(),
         };
         components.push(component);
     }
