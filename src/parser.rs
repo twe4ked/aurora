@@ -56,7 +56,7 @@ fn component(input: &str) -> IResult<&str, Token> {
 }
 
 pub fn parse(input: &str) -> Result<Vec<Token>> {
-    many0(alt((
+    many1(alt((
         any_char_except_opening_brace,
         escaped_opening_brace,
         style,
