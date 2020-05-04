@@ -55,15 +55,19 @@ fn component(input: &str) -> IResult<&str, Token> {
     Ok((input, Token::Component { name, options }))
 }
 
-pub fn parse(input: &str) -> Result<Vec<Token>> {
+fn tokens(input: &str) -> IResult<&str, Vec<Token>> {
     many1(alt((
         any_char_except_opening_brace,
         escaped_opening_brace,
         style,
         component,
     )))(input)
-    .map(|(_, tokens)| Ok(tokens))
-    .unwrap_or_else(|_| Err(anyhow::anyhow!("parse error")))
+}
+
+pub fn parse(input: &str) -> Result<Vec<Token>> {
+    tokens(input)
+        .map(|(_, tokens)| Ok(tokens))
+        .unwrap_or_else(|_| Err(anyhow::anyhow!("parse error")))
 }
 
 #[cfg(test)]
