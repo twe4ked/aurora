@@ -3,7 +3,7 @@ use anyhow::Result;
 use nom::branch::alt;
 use nom::bytes::complete::tag;
 use nom::character::complete::{alpha1, multispace0, none_of};
-use nom::combinator::{map, map_res, verify};
+use nom::combinator::{map, map_res, opt, verify};
 use nom::multi::{many0, many1};
 use nom::sequence::{preceded, terminated};
 use nom::IResult;
@@ -45,6 +45,11 @@ fn end(input: &str) -> IResult<&str, ()> {
     Ok((input, ()))
 }
 
+fn if_else(input: &str) -> IResult<&str, ()> {
+    let (input, _) = tag("{else}")(input)?;
+    Ok((input, ()))
+}
+
 fn conditional(input: &str) -> IResult<&str, Token> {
     // {if condition}
     let (input, _) = if_start(input)?;
@@ -55,8 +60,14 @@ fn conditional(input: &str) -> IResult<&str, Token> {
     // foo bar baz
     let (input, left) = tokens(input)?;
 
-    // TODO: {else}
-    let right = None;
+    // {else}
+    let (input, if_else) = opt(if_else)(input)?;
+    let (input, right) = if if_else.is_some() {
+        let (input, output) = tokens(input)?;
+        (input, Some(output))
+    } else {
+        (input, None)
+    };
 
     // {end}
     let (input, _) = end(input)?;
@@ -86,6 +97,7 @@ fn identifier(input: &str) -> IResult<&str, String> {
     // TODO: Move to static
     let mut reserved = HashSet::new();
     reserved.insert("end".to_string());
+    reserved.insert("else".to_string());
 
     let find_ident = many1(alt((alpha1, underscore)));
     let map_ident = map(find_ident, |ident: Vec<&str>| String::from_iter(ident));
@@ -265,6 +277,18 @@ mod tests {
                 condition: Condition::LastCommandStatus,
                 left: vec![Token::Static("left".to_string())],
                 right: None,
+            }]
+        );
+    }
+
+    #[test]
+    fn it_parses_conditionals_with_else_branch() {
+        assert_eq!(
+            parse(&"{if last_command_status}left{else}right{end}").unwrap(),
+            vec![Token::Conditional {
+                condition: Condition::LastCommandStatus,
+                left: vec![Token::Static("left".to_string())],
+                right: Some(vec![Token::Static("right".to_string())]),
             }]
         );
     }
