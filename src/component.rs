@@ -162,7 +162,7 @@ fn filter(group: &mut Vec<Option<Component>>) {
     //  ^   ^
     //  |   ` Static
     //  ` Style
-    let group_contains_something_other_than_char_or_style = !group.iter().all(|c| match c {
+    let group_contains_something_other_than_static_or_style = !group.iter().all(|c| match c {
         // Check for Static
         Some(Component::Static(_)) => true,
         // Check for Style
@@ -185,7 +185,7 @@ fn filter(group: &mut Vec<Option<Component>>) {
         None => false,
     });
 
-    if group_contains_something_other_than_char_or_style && group_contains_no_value {
+    if group_contains_something_other_than_static_or_style && group_contains_no_value {
         // Retain everything that isn't a Static or a None
         group.retain(|c| match c {
             // Remove Static
@@ -266,14 +266,14 @@ mod tests {
     }
 
     #[test]
-    fn test_filter_just_char() {
+    fn test_filter_just_static() {
         let mut group = vec![Some(Component::Static("a keep".to_string()))];
         filter(&mut group);
         assert_eq!(group, vec![Some(Component::Static("a keep".to_string()))]);
     }
 
     #[test]
-    fn test_filter_just_char_ignores_color() {
+    fn test_filter_just_static_ignores_color() {
         let mut group = vec![
             Some(Component::Style(Style::Color("green".to_string()))),
             Some(Component::Static("a keep".to_string())),
@@ -291,7 +291,7 @@ mod tests {
     }
 
     #[test]
-    fn test_filter_char_and_cwd() {
+    fn test_filter_static_and_cwd() {
         let mut group = vec![
             Some(Component::Static("a keep".to_string())),
             Some(Component::Cwd("b keep".to_string())),
@@ -307,7 +307,7 @@ mod tests {
     }
 
     #[test]
-    fn test_filter_char_and_cwd_ignores_color() {
+    fn test_filter_static_and_cwd_ignores_color() {
         let mut group = vec![
             Some(Component::Style(Style::Color("green".to_string()))),
             Some(Component::Static("a keep".to_string())),
@@ -327,14 +327,14 @@ mod tests {
     }
 
     #[test]
-    fn test_filter_char_and_empty() {
+    fn test_filter_static_and_empty() {
         let mut group = vec![Some(Component::Static("a keep".to_string())), None];
         filter(&mut group);
         assert_eq!(group, vec![]);
     }
 
     #[test]
-    fn test_filter_char_and_empty_ignores_color() {
+    fn test_filter_static_and_empty_ignores_color() {
         let mut group = vec![
             Some(Component::Style(Style::Color("green".to_string()))),
             Some(Component::Static("a keep".to_string())),
@@ -352,7 +352,7 @@ mod tests {
     }
 
     #[test]
-    fn test_filter_char_cwd_and_empty() {
+    fn test_filter_static_cwd_and_empty() {
         let mut group = vec![
             Some(Component::Style(Style::Color("green".to_string()))),
             Some(Component::Static("a keep".to_string())),
