@@ -1,6 +1,7 @@
 aurora_precmd() {
+    local __status=$?
     local __jobs=$jobtexts
-    PROMPT="$(__CMD__ run --config=__CONFIG__ --jobs="${__jobs:-__empty__}" --shell=zsh)"
+    PROMPT="$(__CMD__ run --config=__CONFIG__ --jobs="${__jobs:-__empty__}" --shell=zsh --status="$__status")"
 }
 
 [[ -z "${precmd_functions+1}" ]] && precmd_functions=()

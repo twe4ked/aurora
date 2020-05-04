@@ -9,8 +9,9 @@ aurora_preexec() {
 
 # Will be run before the prompt is drawn
 aurora_precmd() {
+    local __status=$?
     local __jobs="$(jobs -p | wc -l)"
-    PS1="$(__CMD__ run --config=__CONFIG__ --jobs="${__jobs:-__empty__}" --shell=bash)"
+    PS1="$(__CMD__ run --config=__CONFIG__ --jobs="${__jobs:-__empty__}" --shell=bash --status="$__status")"
 }
 
 # We want to avoid destroying an existing DEBUG hook. If we detect one, create

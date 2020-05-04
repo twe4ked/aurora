@@ -3,7 +3,7 @@ use anyhow::Result;
 use std::collections::HashMap;
 use std::fmt;
 
-use crate::token::Token;
+use crate::token::{Condition, Token};
 use crate::Shell;
 
 pub mod cwd;
@@ -22,6 +22,32 @@ pub enum Component {
     GitCommit(String),
     GitStash(String),
     Jobs(String),
+}
+
+pub fn evaluate_token_conditionals(tokens: Vec<Token>, status: usize) -> Vec<Token> {
+    let mut ret = Vec::new();
+    for token in tokens.into_iter() {
+        match token {
+            Token::Conditional {
+                condition,
+                mut left,
+                right,
+            } => {
+                let result = match condition {
+                    Condition::LastCommandStatus => status == 0,
+                };
+                if result {
+                    ret.append(&mut left);
+                } else {
+                    if let Some(mut right) = right {
+                        ret.append(&mut right);
+                    }
+                }
+            }
+            _ => ret.push(token),
+        };
+    }
+    ret
 }
 
 pub fn components_from_tokens(
@@ -55,7 +81,7 @@ pub fn components_from_tokens(
                 condition: _,
                 left: _,
                 right: _,
-            } => todo!(),
+            } => unreachable!("conditonals should already be evaluated"),
         };
         components.push(component);
     }

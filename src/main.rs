@@ -27,6 +27,8 @@ pub struct Run {
     shell: Shell,
     #[clap(short, long, default_value = DEFAULT_CONFIG)]
     config: String,
+    #[clap(long)]
+    status: usize,
 }
 
 impl Run {
@@ -82,6 +84,8 @@ fn run(options: Run) -> Result<()> {
     use aurora_prompt::parser;
 
     let tokens = parser::parse(&options.config)?;
+    let tokens = component::evaluate_token_conditionals(tokens, options.status);
+
     let components = component::components_from_tokens(tokens, &options.shell, options.jobs());
     for component in components? {
         print!("{}", component);
