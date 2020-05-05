@@ -54,7 +54,6 @@ pub fn components(
     status: usize,
 ) -> Result<Vec<component::Component>> {
     let tokens = parser::parse(config)?;
-    let tokens = component::evaluate_token_conditionals(tokens, status);
 
-    component::components_from_tokens(tokens, shell, jobs)
+    component::components_from_tokens(tokens, shell, jobs, status)
 }

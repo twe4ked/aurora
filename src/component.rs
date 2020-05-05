@@ -21,7 +21,7 @@ pub enum Component {
     Computed(String),
 }
 
-pub fn evaluate_token_conditionals(tokens: Vec<Token>, status: usize) -> Vec<Token> {
+fn evaluate_token_conditionals(tokens: Vec<Token>, status: usize) -> Vec<Token> {
     let mut ret = Vec::new();
     for token in tokens.into_iter() {
         match token {
@@ -84,7 +84,10 @@ pub fn components_from_tokens(
     tokens: Vec<Token>,
     shell: &Shell,
     jobs: Option<String>,
+    status: usize,
 ) -> Result<Vec<Component>> {
+    let tokens = evaluate_token_conditionals(tokens, status);
+
     let mut components = Vec::new();
 
     for token in tokens.into_iter() {
@@ -421,6 +424,7 @@ mod tests {
             }],
             &Shell::Zsh,
             None,
+            0,
         );
 
         assert_eq!(result.unwrap_err().to_string(), "invalid options");
