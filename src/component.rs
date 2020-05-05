@@ -3,7 +3,7 @@ use anyhow::Result;
 use std::collections::HashMap;
 use std::fmt;
 
-use crate::token::{Condition, Token};
+use crate::token::{self, Condition, Token};
 use crate::Shell;
 
 pub mod cwd;
@@ -62,13 +62,12 @@ pub fn components_from_tokens(
             Token::Static(s) => Some(Component::Static(s.to_string())),
             Token::Style(style) => style::display(&style, &shell),
             Token::Component { name, options } => {
-                let c = match name.as_ref() {
-                    "git_branch" => git_branch::display(),
-                    "git_commit" => git_commit::display(),
-                    "git_stash" => git_stash::display(),
-                    "jobs" => jobs::display(jobs.clone()),
-                    "cwd" => cwd::display(options.remove("style")),
-                    _ => return Err(anyhow::anyhow!("invalid component")),
+                let c = match name {
+                    token::Component::GitBranch => git_branch::display(),
+                    token::Component::GitCommit => git_commit::display(),
+                    token::Component::GitStash => git_stash::display(),
+                    token::Component::Jobs => jobs::display(jobs.clone()),
+                    token::Component::Cwd => cwd::display(options.remove("style")),
                 };
 
                 if !options.is_empty() {

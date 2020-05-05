@@ -1,4 +1,4 @@
-use crate::token::{Condition, StyleToken, Token};
+use crate::token::{Component, Condition, StyleToken, Token};
 use anyhow::Result;
 use nom::branch::alt;
 use nom::bytes::complete::tag;
@@ -108,7 +108,7 @@ fn identifier(input: &str) -> IResult<&str, String> {
 fn component(input: &str) -> IResult<&str, Token> {
     let (input, _) = tag("{")(input)?;
     let (input, _) = multispace0(input)?;
-    let (input, name) = identifier(input)?;
+    let (input, name) = map_res(identifier, |s: String| s.parse::<Component>())(input)?;
     let (input, options) = many0(key_value)(input)?;
     let options = options.into_iter().collect();
     let (input, _) = multispace0(input)?;

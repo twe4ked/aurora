@@ -66,9 +66,33 @@ impl std::str::FromStr for Condition {
 }
 
 #[derive(Debug, PartialEq)]
+pub enum Component {
+    Cwd,
+    GitBranch,
+    GitCommit,
+    Jobs,
+    GitStash,
+}
+
+impl std::str::FromStr for Component {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "cwd" => Ok(Component::Cwd),
+            "git_branch" => Ok(Component::GitBranch),
+            "git_commit" => Ok(Component::GitCommit),
+            "git_stash" => Ok(Component::GitStash),
+            "jobs" => Ok(Component::Jobs),
+            _ => Err(()),
+        }
+    }
+}
+
+#[derive(Debug, PartialEq)]
 pub enum Token {
     Component {
-        name: String,
+        name: Component,
         options: HashMap<String, String>,
     },
     Static(String),
