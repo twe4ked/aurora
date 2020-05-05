@@ -55,20 +55,20 @@ fn components_from_token(
                 Condition::LastCommandStatus => status == 0,
             };
             if result {
-                let mut components = Vec::new();
-                for token in left.into_iter() {
-                    let mut c = components_from_token(token, shell, &jobs, status)?;
-                    components.append(&mut c);
-                }
-                ret.append(&mut components);
+                ret.append(&mut components_from_tokens(
+                    left,
+                    shell,
+                    jobs.clone(),
+                    status,
+                )?);
             } else {
                 if let Some(right) = right {
-                    let mut components = Vec::new();
-                    for token in right.into_iter() {
-                        let mut c = components_from_token(token, shell, &jobs, status)?;
-                        components.append(&mut c);
-                    }
-                    ret.append(&mut components);
+                    ret.append(&mut components_from_tokens(
+                        right,
+                        shell,
+                        jobs.clone(),
+                        status,
+                    )?);
                 }
             }
         }
@@ -82,7 +82,7 @@ pub fn components_from_tokens(
     shell: &Shell,
     jobs: Option<String>,
     status: usize,
-) -> Result<Vec<Component>> {
+) -> Result<Vec<Option<Component>>> {
     let mut components = Vec::new();
 
     for token in tokens.into_iter() {
@@ -90,7 +90,7 @@ pub fn components_from_tokens(
         components.append(&mut c);
     }
 
-    Ok(squash(components))
+    Ok(components)
 }
 
 impl fmt::Display for Component {
@@ -174,7 +174,7 @@ fn into_groups(components: Vec<Option<Component>>) -> Vec<Vec<Option<Component>>
     groups.groups()
 }
 
-fn squash(components: Vec<Option<Component>>) -> Vec<Component> {
+pub fn squash(components: Vec<Option<Component>>) -> Vec<Component> {
     let mut groups = into_groups(components);
 
     let mut components = Vec::new();
