@@ -4,12 +4,6 @@ use crate::Shell;
 use crossterm::style::{Color as CrosstermColor, ResetColor, SetForegroundColor};
 use std::fmt::Display;
 
-#[derive(Debug, PartialEq)]
-pub enum Style {
-    Color(String),
-    Reset(String),
-}
-
 impl std::convert::From<&StyleToken> for CrosstermColor {
     fn from(style_token: &StyleToken) -> Self {
         match style_token {
@@ -35,15 +29,16 @@ impl std::convert::From<&StyleToken> for CrosstermColor {
 
 pub fn display(style_token: &StyleToken, shell: &Shell) -> Option<Component> {
     if style_token == &StyleToken::Reset {
-        return Some(Component::Style(Style::Reset(
-            wrap_no_change_cursor_position(ResetColor, shell),
+        return Some(Component::ColorReset(wrap_no_change_cursor_position(
+            ResetColor, shell,
         )));
     }
 
     let crossterm_color = CrosstermColor::from(style_token);
 
-    Some(Component::Style(Style::Color(
-        wrap_no_change_cursor_position(SetForegroundColor(crossterm_color), shell),
+    Some(Component::Color(wrap_no_change_cursor_position(
+        SetForegroundColor(crossterm_color),
+        shell,
     )))
 }
 
@@ -64,17 +59,13 @@ mod tests {
 
     #[test]
     fn display_green() {
-        if let Some(Component::Style(Style::Color(green))) =
-            display(&StyleToken::Green, &Shell::Zsh)
-        {
+        if let Some(Component::Color(green)) = display(&StyleToken::Green, &Shell::Zsh) {
             assert_eq!(format!("{}", green), "%{\u{1b}[38;5;10m%}".to_string());
         } else {
             unreachable!();
         }
 
-        if let Some(Component::Style(Style::Color(green))) =
-            display(&StyleToken::Green, &Shell::Bash)
-        {
+        if let Some(Component::Color(green)) = display(&StyleToken::Green, &Shell::Bash) {
             assert_eq!(format!("{}", green), "\\[\u{1b}[38;5;10m\\]".to_string());
         } else {
             unreachable!();
