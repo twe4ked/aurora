@@ -21,6 +21,17 @@ pub enum Component {
     Computed(String),
 }
 
+impl fmt::Display for Component {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Component::Color(c)
+            | Component::ColorReset(c)
+            | Component::Static(c)
+            | Component::Computed(c) => write!(f, "{}", c),
+        }
+    }
+}
+
 fn components_from_token(
     token: Token,
     shell: &Shell,
@@ -81,17 +92,6 @@ pub fn components_from_tokens(
     }
 
     Ok(components)
-}
-
-impl fmt::Display for Component {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Component::Color(c)
-            | Component::ColorReset(c)
-            | Component::Static(c)
-            | Component::Computed(c) => write!(f, "{}", c),
-        }
-    }
 }
 
 fn into_groups(components: Vec<Option<Component>>) -> Vec<Vec<Option<Component>>> {
