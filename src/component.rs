@@ -24,7 +24,7 @@ pub enum Component {
 fn components_from_token(
     token: Token,
     shell: &Shell,
-    jobs: &Option<String>,
+    jobs: Option<&str>,
     status: usize,
 ) -> Result<Vec<Option<Component>>> {
     let mut ret = Vec::new();
@@ -55,20 +55,10 @@ fn components_from_token(
                 Condition::LastCommandStatus => status == 0,
             };
             if result {
-                ret.append(&mut components_from_tokens(
-                    left,
-                    shell,
-                    jobs.clone(),
-                    status,
-                )?);
+                ret.append(&mut components_from_tokens(left, shell, jobs, status)?);
             } else {
                 if let Some(right) = right {
-                    ret.append(&mut components_from_tokens(
-                        right,
-                        shell,
-                        jobs.clone(),
-                        status,
-                    )?);
+                    ret.append(&mut components_from_tokens(right, shell, jobs, status)?);
                 }
             }
         }
@@ -80,13 +70,13 @@ fn components_from_token(
 pub fn components_from_tokens(
     tokens: Vec<Token>,
     shell: &Shell,
-    jobs: Option<String>,
+    jobs: Option<&str>,
     status: usize,
 ) -> Result<Vec<Option<Component>>> {
     let mut components = Vec::new();
 
     for token in tokens.into_iter() {
-        let mut c = components_from_token(token, shell, &jobs, status)?;
+        let mut c = components_from_token(token, shell, jobs, status)?;
         components.append(&mut c);
     }
 
