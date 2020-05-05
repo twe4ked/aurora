@@ -47,38 +47,48 @@ pub fn evaluate_token_conditionals(tokens: Vec<Token>, status: usize) -> Vec<Tok
     ret
 }
 
+pub fn component_from_token(
+    token: Token,
+    shell: &Shell,
+    jobs: &Option<String>,
+) -> Result<Option<Component>> {
+    let component = match token {
+        Token::Static(s) => Some(Component::Static(s.to_string())),
+        Token::Style(style) => style::display(&style, &shell),
+        Token::Component { name, mut options } => {
+            let c = match name {
+                token::Component::GitBranch => git_branch::display(),
+                token::Component::GitCommit => git_commit::display(),
+                token::Component::GitStash => git_stash::display(),
+                token::Component::Jobs => jobs::display(jobs.clone()),
+                token::Component::Cwd => cwd::display(options.remove("style")),
+            };
+
+            if !options.is_empty() {
+                return Err(anyhow::anyhow!("invalid options"));
+            }
+
+            c
+        }
+        Token::Conditional {
+            condition: _,
+            left: _,
+            right: _,
+        } => unreachable!("conditonals should already be evaluated"),
+    };
+
+    Ok(component)
+}
+
 pub fn components_from_tokens(
-    mut tokens: Vec<Token>,
+    tokens: Vec<Token>,
     shell: &Shell,
     jobs: Option<String>,
 ) -> Result<Vec<Component>> {
     let mut components = Vec::new();
 
-    for token in tokens.iter_mut() {
-        let component = match token {
-            Token::Static(s) => Some(Component::Static(s.to_string())),
-            Token::Style(style) => style::display(&style, &shell),
-            Token::Component { name, options } => {
-                let c = match name {
-                    token::Component::GitBranch => git_branch::display(),
-                    token::Component::GitCommit => git_commit::display(),
-                    token::Component::GitStash => git_stash::display(),
-                    token::Component::Jobs => jobs::display(jobs.clone()),
-                    token::Component::Cwd => cwd::display(options.remove("style")),
-                };
-
-                if !options.is_empty() {
-                    return Err(anyhow::anyhow!("invalid options"));
-                }
-
-                c
-            }
-            Token::Conditional {
-                condition: _,
-                left: _,
-                right: _,
-            } => unreachable!("conditonals should already be evaluated"),
-        };
+    for token in tokens.into_iter() {
+        let component = component_from_token(token, shell, &jobs)?;
         components.push(component);
     }
 
