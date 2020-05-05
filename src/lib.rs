@@ -56,6 +56,7 @@ pub fn components(
     let tokens = parser::parse(config)?;
 
     let components = component::components_from_tokens(tokens, shell, jobs.as_deref(), status)?;
+    let components = component::squash(components);
 
-    Ok(component::squash(components))
+    Ok(components)
 }
