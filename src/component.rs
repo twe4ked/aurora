@@ -21,40 +21,16 @@ pub enum Component {
     Computed(String),
 }
 
-fn evaluate_token_conditionals(tokens: Vec<Token>, status: usize) -> Vec<Token> {
-    let mut ret = Vec::new();
-    for token in tokens.into_iter() {
-        match token {
-            Token::Conditional {
-                condition,
-                mut left,
-                right,
-            } => {
-                let result = match condition {
-                    Condition::LastCommandStatus => status == 0,
-                };
-                if result {
-                    ret.append(&mut left);
-                } else {
-                    if let Some(mut right) = right {
-                        ret.append(&mut right);
-                    }
-                }
-            }
-            _ => ret.push(token),
-        };
-    }
-    ret
-}
-
-pub fn component_from_token(
+fn components_from_token(
     token: Token,
     shell: &Shell,
     jobs: &Option<String>,
-) -> Result<Option<Component>> {
-    let component = match token {
-        Token::Static(s) => Some(Component::Static(s.to_string())),
-        Token::Style(style) => style::display(&style, &shell),
+    status: usize,
+) -> Result<Vec<Option<Component>>> {
+    let mut ret = Vec::new();
+    match token {
+        Token::Static(s) => ret.push(Some(Component::Static(s.to_string()))),
+        Token::Style(style) => ret.push(style::display(&style, &shell)),
         Token::Component { name, mut options } => {
             let c = match name {
                 token::Component::GitBranch => git_branch::display(),
@@ -68,16 +44,37 @@ pub fn component_from_token(
                 return Err(anyhow::anyhow!("invalid options"));
             }
 
-            c
+            ret.push(c);
         }
         Token::Conditional {
-            condition: _,
-            left: _,
-            right: _,
-        } => unreachable!("conditonals should already be evaluated"),
+            condition,
+            left,
+            right,
+        } => {
+            let result = match condition {
+                Condition::LastCommandStatus => status == 0,
+            };
+            if result {
+                let mut components = Vec::new();
+                for token in left.into_iter() {
+                    let mut c = components_from_token(token, shell, &jobs, status)?;
+                    components.append(&mut c);
+                }
+                ret.append(&mut components);
+            } else {
+                if let Some(right) = right {
+                    let mut components = Vec::new();
+                    for token in right.into_iter() {
+                        let mut c = components_from_token(token, shell, &jobs, status)?;
+                        components.append(&mut c);
+                    }
+                    ret.append(&mut components);
+                }
+            }
+        }
     };
 
-    Ok(component)
+    Ok(ret)
 }
 
 pub fn components_from_tokens(
@@ -86,13 +83,11 @@ pub fn components_from_tokens(
     jobs: Option<String>,
     status: usize,
 ) -> Result<Vec<Component>> {
-    let tokens = evaluate_token_conditionals(tokens, status);
-
     let mut components = Vec::new();
 
     for token in tokens.into_iter() {
-        let component = component_from_token(token, shell, &jobs)?;
-        components.push(component);
+        let mut c = components_from_token(token, shell, &jobs, status)?;
+        components.append(&mut c);
     }
 
     Ok(squash(components))
