@@ -10,7 +10,7 @@ pub fn display() -> Option<Component> {
             }
             head.unwrap()
                 .shorthand()
-                .map(|shorthand| Component::GitBranch(shorthand.to_string()))
+                .map(|shorthand| Component::Computed(shorthand.to_string()))
         }
         None => None,
     }

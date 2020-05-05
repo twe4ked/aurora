@@ -9,7 +9,7 @@ pub fn display() -> Option<Component> {
                 return None;
             }
             head.unwrap().peel_to_commit().ok().map(|commit| {
-                Component::GitCommit(
+                Component::Computed(
                     commit
                         .id()
                         .as_bytes()

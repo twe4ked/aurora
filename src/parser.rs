@@ -145,7 +145,7 @@ mod tests {
         assert_eq!(
             parse(&"{cwd}").unwrap(),
             vec![Token::Component {
-                name: "cwd".to_string(),
+                name: Component::Cwd,
                 options: HashMap::new(),
             }]
         );
@@ -157,7 +157,7 @@ mod tests {
             parse(&"{cwd} $").unwrap(),
             vec![
                 Token::Component {
-                    name: "cwd".to_string(),
+                    name: Component::Cwd,
                     options: HashMap::new(),
                 },
                 Token::Static(" $".to_string())
@@ -172,7 +172,7 @@ mod tests {
         assert_eq!(
             parse(&"{cwd style=default}").unwrap(),
             vec![Token::Component {
-                name: "cwd".to_string(),
+                name: Component::Cwd,
                 options,
             },]
         );
@@ -182,7 +182,7 @@ mod tests {
         assert_eq!(
             parse(&"{cwd style=short}").unwrap(),
             vec![Token::Component {
-                name: "cwd".to_string(),
+                name: Component::Cwd,
                 options,
             },]
         );
@@ -192,7 +192,7 @@ mod tests {
         assert_eq!(
             parse(&"{cwd style=long}").unwrap(),
             vec![Token::Component {
-                name: "cwd".to_string(),
+                name: Component::Cwd,
                 options,
             },]
         );
@@ -225,7 +225,7 @@ mod tests {
                 Token::Static("{{".to_string()),
                 Token::Static("cwd".to_string()),
                 Token::Component {
-                    name: "cwd".to_string(),
+                    name: Component::Cwd,
                     options: HashMap::new(),
                 }
             ]
@@ -239,15 +239,15 @@ mod tests {
         options.insert("d".to_string(), "12".to_string());
 
         assert_eq!(
-            parse(&"{  foo a=bc   d=12  }  { bar }").unwrap(),
+            parse(&"{  git_branch a=bc   d=12  }  { git_commit }").unwrap(),
             vec![
                 Token::Component {
-                    name: "foo".to_string(),
+                    name: Component::GitBranch,
                     options,
                 },
                 Token::Static("  ".to_string()),
                 Token::Component {
-                    name: "bar".to_string(),
+                    name: Component::GitCommit,
                     options: HashMap::new(),
                 },
             ]
@@ -261,9 +261,9 @@ mod tests {
         options.insert("d".to_string(), "12".to_string());
 
         assert_eq!(
-            parse(&"{foo a=bc d=12}").unwrap(),
+            parse(&"{git_branch a=bc d=12}").unwrap(),
             vec![Token::Component {
-                name: "foo".to_string(),
+                name: Component::GitBranch,
                 options,
             }]
         );

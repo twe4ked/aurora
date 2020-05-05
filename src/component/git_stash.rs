@@ -12,7 +12,7 @@ pub fn display() -> Option<Component> {
             if x.is_err() || count == 0 {
                 return None;
             }
-            Some(Component::GitStash(format!("{}+", count)))
+            Some(Component::Computed(format!("{}+", count)))
         }
         None => None,
     }

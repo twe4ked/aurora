@@ -22,7 +22,7 @@ pub fn display(style: Option<String>) -> Option<Component> {
     };
 
     let current_dir = crate::CURRENT_DIR.lock().expect("poisoned");
-    Some(Component::Cwd(
+    Some(Component::Computed(
         cwd(&style, &current_dir).unwrap_or_else(|_| long(&current_dir).unwrap()),
     ))
 }
