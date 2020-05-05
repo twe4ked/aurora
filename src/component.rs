@@ -32,52 +32,6 @@ impl fmt::Display for Component {
     }
 }
 
-fn components_from_token(
-    token: Token,
-    shell: &Shell,
-    jobs: Option<&str>,
-    status: usize,
-) -> Result<Vec<Option<Component>>> {
-    let mut ret = Vec::new();
-    match token {
-        Token::Static(s) => ret.push(Some(Component::Static(s.to_string()))),
-        Token::Style(style) => ret.push(style::display(&style, &shell)),
-        Token::Component { name, mut options } => {
-            let c = match name {
-                token::Component::GitBranch => git_branch::display(),
-                token::Component::GitCommit => git_commit::display(),
-                token::Component::GitStash => git_stash::display(),
-                token::Component::Jobs => jobs::display(jobs.clone()),
-                token::Component::Cwd => cwd::display(options.remove("style")),
-            };
-
-            if !options.is_empty() {
-                return Err(anyhow::anyhow!("invalid options"));
-            }
-
-            ret.push(c);
-        }
-        Token::Conditional {
-            condition,
-            left,
-            right,
-        } => {
-            let result = match condition {
-                Condition::LastCommandStatus => status == 0,
-            };
-            if result {
-                ret.append(&mut components_from_tokens(left, shell, jobs, status)?);
-            } else {
-                if let Some(right) = right {
-                    ret.append(&mut components_from_tokens(right, shell, jobs, status)?);
-                }
-            }
-        }
-    };
-
-    Ok(ret)
-}
-
 pub fn components_from_tokens(
     tokens: Vec<Token>,
     shell: &Shell,
@@ -87,8 +41,41 @@ pub fn components_from_tokens(
     let mut components = Vec::new();
 
     for token in tokens.into_iter() {
-        let mut c = components_from_token(token, shell, jobs, status)?;
-        components.append(&mut c);
+        match token {
+            Token::Static(s) => components.push(Some(Component::Static(s.to_string()))),
+            Token::Style(style) => components.push(style::display(&style, &shell)),
+            Token::Component { name, mut options } => {
+                let c = match name {
+                    token::Component::GitBranch => git_branch::display(),
+                    token::Component::GitCommit => git_commit::display(),
+                    token::Component::GitStash => git_stash::display(),
+                    token::Component::Jobs => jobs::display(jobs.clone()),
+                    token::Component::Cwd => cwd::display(options.remove("style")),
+                };
+
+                if !options.is_empty() {
+                    return Err(anyhow::anyhow!("invalid options"));
+                }
+
+                components.push(c);
+            }
+            Token::Conditional {
+                condition,
+                left,
+                right,
+            } => {
+                let result = match condition {
+                    Condition::LastCommandStatus => status == 0,
+                };
+                if result {
+                    components.append(&mut components_from_tokens(left, shell, jobs, status)?);
+                } else {
+                    if let Some(right) = right {
+                        components.append(&mut components_from_tokens(right, shell, jobs, status)?);
+                    }
+                }
+            }
+        };
     }
 
     Ok(components)
