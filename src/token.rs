@@ -70,8 +70,9 @@ pub enum Component {
     Cwd,
     GitBranch,
     GitCommit,
-    Jobs,
     GitStash,
+    GitStatus,
+    Jobs,
 }
 
 impl std::str::FromStr for Component {
@@ -83,6 +84,7 @@ impl std::str::FromStr for Component {
             "git_branch" => Ok(Component::GitBranch),
             "git_commit" => Ok(Component::GitCommit),
             "git_stash" => Ok(Component::GitStash),
+            "git_status" => Ok(Component::GitStatus),
             "jobs" => Ok(Component::Jobs),
             _ => Err(()),
         }

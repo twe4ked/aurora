@@ -10,6 +10,7 @@ pub mod cwd;
 pub mod git_branch;
 pub mod git_commit;
 pub mod git_stash;
+pub mod git_status;
 pub mod jobs;
 pub mod style;
 
@@ -49,6 +50,7 @@ pub fn components_from_tokens(
                     token::Component::GitBranch => git_branch::display(),
                     token::Component::GitCommit => git_commit::display(),
                     token::Component::GitStash => git_stash::display(),
+                    token::Component::GitStatus => git_status::display()?,
                     token::Component::Jobs => jobs::display(jobs.clone()),
                     token::Component::Cwd => cwd::display(options.remove("style")),
                 };
