@@ -1,5 +1,6 @@
 use crate::component::Component;
 use crate::error::Error;
+use crate::Context;
 use std::path::{Path, PathBuf};
 
 #[derive(Debug, PartialEq)]
@@ -9,7 +10,7 @@ pub enum CwdStyle {
     Short,
 }
 
-pub fn display(style: Option<String>) -> Option<Component> {
+pub fn display(context: &Context, style: Option<String>) -> Option<Component> {
     let style = if let Some(value) = style {
         match value.as_ref() {
             "default" => CwdStyle::Default,
@@ -21,13 +22,13 @@ pub fn display(style: Option<String>) -> Option<Component> {
         CwdStyle::Default
     };
 
-    let current_dir = crate::CURRENT_DIR.lock().expect("poisoned");
+    let current_dir = context.current_dir();
     Some(Component::Computed(
-        cwd(&style, &current_dir).unwrap_or_else(|_| long(&current_dir).unwrap()),
+        cwd(&context, &style, &current_dir).unwrap_or_else(|_| long(&current_dir).unwrap()),
     ))
 }
 
-fn cwd(style: &CwdStyle, current_dir: &PathBuf) -> Result<String, Error> {
+fn cwd(context: &Context, style: &CwdStyle, current_dir: &PathBuf) -> Result<String, Error> {
     match style {
         CwdStyle::Default => {
             let home_dir = dirs::home_dir().unwrap_or_default();
@@ -35,8 +36,7 @@ fn cwd(style: &CwdStyle, current_dir: &PathBuf) -> Result<String, Error> {
         }
         CwdStyle::Short => {
             let home_dir = dirs::home_dir().unwrap_or_default();
-            let repository = crate::GIT_REPOSITORY.lock().expect("poisoned");
-            let repository = match &*repository {
+            let repository = match context.git_repository() {
                 Some(r) => Some(r.path()),
                 None => None,
             };

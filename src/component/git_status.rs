@@ -1,12 +1,13 @@
 use crate::component::Component;
+use crate::Context;
 use anyhow::Result;
 use git2::{Status, StatusEntry};
 
 // + New file added to the working tree
 // * File modified in the working tree
 // - File deleted from the working tree
-pub fn display() -> Result<Option<Component>> {
-    if let Some(repo_status) = repo_status()? {
+pub fn display(context: &Context) -> Result<Option<Component>> {
+    if let Some(repo_status) = repo_status(context)? {
         let mut output = String::new();
 
         if repo_status.is_wt_modified() {
@@ -28,9 +29,8 @@ pub fn display() -> Result<Option<Component>> {
     Ok(None)
 }
 
-fn repo_status() -> Result<Option<Status>> {
-    let repository = crate::GIT_REPOSITORY.lock().expect("poisoned");
-    if let Some(ref r) = &*repository {
+fn repo_status(context: &Context) -> Result<Option<Status>> {
+    if let Some(ref r) = context.git_repository() {
         let status_options = None;
         let statuses = r
             .statuses(status_options)?

@@ -1,8 +1,8 @@
 use crate::component::Component;
+use crate::Context;
 
-pub fn display() -> Option<Component> {
-    let repository = crate::GIT_REPOSITORY.lock().expect("poisoned");
-    match &*repository {
+pub fn display(context: &Context) -> Option<Component> {
+    match context.git_repository() {
         Some(r) => {
             let head = r.head();
             if head.is_err() {

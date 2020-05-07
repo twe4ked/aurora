@@ -3,31 +3,43 @@ mod error;
 mod parser;
 mod token;
 
-use anyhow::{Context, Result};
+use anyhow::{Context as AnyhowContext, Result};
 use git2::Repository;
-use once_cell::sync::Lazy;
+use once_cell::sync::OnceCell;
 
 use std::env;
 use std::path::PathBuf;
-use std::sync::Mutex;
 
-pub static CURRENT_DIR: Lazy<Mutex<PathBuf>> = Lazy::new(|| {
-    let current_dir = env::var("PWD")
-        .map(PathBuf::from)
-        .with_context(|| "unable to get current dir")
-        .unwrap();
-    Mutex::new(current_dir)
-});
+#[derive(Default)]
+pub struct Context {
+    current_dir: OnceCell<PathBuf>,
+    git_repository: OnceCell<Option<Repository>>,
+}
 
-pub static GIT_REPOSITORY: Lazy<Mutex<Option<Repository>>> = Lazy::new(|| {
-    // TODO: Re-use CURRENT_DIR here.
-    let current_dir = env::var("PWD")
-        .map(PathBuf::from)
-        .with_context(|| "unable to get current dir")
-        .unwrap();
-    let r = Repository::discover(&current_dir).ok();
-    Mutex::new(r)
-});
+impl Context {
+    pub fn current_dir(&self) -> &PathBuf {
+        self.current_dir.get_or_init(|| {
+            env::var("PWD")
+                .map(PathBuf::from)
+                .with_context(|| "unable to get current dir")
+                .unwrap()
+        })
+    }
+
+    pub fn git_repository(&self) -> Option<&Repository> {
+        self.git_repository
+            .get_or_init(|| Repository::discover(&self.current_dir()).ok())
+            .as_ref()
+    }
+
+    pub fn git_repository_mut(&mut self) -> Option<&mut Repository> {
+        self.git_repository();
+        self.git_repository
+            .get_mut()
+            .expect("intitialized above")
+            .as_mut()
+    }
+}
 
 #[derive(Debug)]
 pub enum Shell {

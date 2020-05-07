@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::fmt;
 
 use crate::token::{self, Condition, Token};
-use crate::Shell;
+use crate::{Context, Shell};
 
 pub mod cwd;
 pub mod git_branch;
@@ -39,6 +39,7 @@ pub fn components_from_tokens(
     jobs: Option<&str>,
     status: usize,
 ) -> Result<Vec<Option<Component>>> {
+    let mut context = Context::default();
     let mut components = Vec::new();
 
     for token in tokens.into_iter() {
@@ -47,12 +48,12 @@ pub fn components_from_tokens(
             Token::Style(style) => components.push(style::display(&style, &shell)),
             Token::Component { name, mut options } => {
                 let c = match name {
-                    token::Component::GitBranch => git_branch::display(),
-                    token::Component::GitCommit => git_commit::display(),
-                    token::Component::GitStash => git_stash::display(),
-                    token::Component::GitStatus => git_status::display()?,
+                    token::Component::GitBranch => git_branch::display(&context),
+                    token::Component::GitCommit => git_commit::display(&context),
+                    token::Component::GitStash => git_stash::display(&mut context),
+                    token::Component::GitStatus => git_status::display(&context)?,
                     token::Component::Jobs => jobs::display(jobs.clone()),
-                    token::Component::Cwd => cwd::display(options.remove("style")),
+                    token::Component::Cwd => cwd::display(&context, options.remove("style")),
                 };
 
                 if !options.is_empty() {

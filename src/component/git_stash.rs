@@ -1,8 +1,8 @@
 use crate::component::Component;
+use crate::Context;
 
-pub fn display() -> Option<Component> {
-    let mut repository = crate::GIT_REPOSITORY.lock().expect("poisoned");
-    match &mut *repository {
+pub fn display(context: &mut Context) -> Option<Component> {
+    match context.git_repository_mut() {
         Some(ref mut r) => {
             let mut count = 0;
             let x = r.stash_foreach(|_, _, _| {
