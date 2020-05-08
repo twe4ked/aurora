@@ -35,11 +35,11 @@ impl fmt::Display for Component {
 
 pub fn components_from_tokens(
     tokens: Vec<Token>,
+    mut context: &mut Context,
     shell: &Shell,
     jobs: Option<&str>,
     status: usize,
 ) -> Result<Vec<Option<Component>>> {
-    let mut context = Context::default();
     let mut components = Vec::new();
 
     for token in tokens.into_iter() {
@@ -71,10 +71,14 @@ pub fn components_from_tokens(
                     Condition::LastCommandStatus => status == 0,
                 };
                 if result {
-                    components.append(&mut components_from_tokens(left, shell, jobs, status)?);
+                    components.append(&mut components_from_tokens(
+                        left, context, shell, jobs, status,
+                    )?);
                 } else {
                     if let Some(right) = right {
-                        components.append(&mut components_from_tokens(right, shell, jobs, status)?);
+                        components.append(&mut components_from_tokens(
+                            right, context, shell, jobs, status,
+                        )?);
                     }
                 }
             }
@@ -392,11 +396,13 @@ mod tests {
         let mut options = HashMap::new();
         options.insert("foo".to_string(), "bar".to_string());
 
+        let mut context = Context::default();
         let result = components_from_tokens(
             vec![Token::Component {
                 name: token::Component::Jobs,
                 options,
             }],
+            &mut context,
             &Shell::Zsh,
             None,
             0,

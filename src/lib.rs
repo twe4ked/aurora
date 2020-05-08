@@ -67,7 +67,9 @@ pub fn components(
 ) -> Result<Vec<component::Component>> {
     let tokens = parser::parse(config)?;
 
-    let components = component::components_from_tokens(tokens, shell, jobs.as_deref(), status)?;
+    let mut context = Context::default();
+    let components =
+        component::components_from_tokens(tokens, &mut context, shell, jobs.as_deref(), status)?;
     let components = component::squash(components);
 
     Ok(components)
