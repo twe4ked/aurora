@@ -16,7 +16,7 @@ pub fn display(context: &Context) -> Option<Component> {
                         .iter()
                         .fold(String::new(), |acc, b| acc + &format!("{:02x}", b))
                         [0..7]
-                        .to_string(),
+                        .to_owned(),
                 )
             })
         }
