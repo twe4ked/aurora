@@ -5,49 +5,46 @@ use nom::bytes::complete::tag;
 use nom::character::complete::{alpha1, multispace0, none_of};
 use nom::combinator::{map, map_res, opt, verify};
 use nom::multi::{many0, many1};
-use nom::sequence::{preceded, terminated};
+use nom::sequence::{pair, preceded, separated_pair, terminated};
 use nom::IResult;
 use std::collections::HashSet;
 use std::iter::FromIterator;
 
 fn any_char_except_opening_brace(input: &str) -> IResult<&str, Token> {
-    let (input, output) = many1(none_of("{"))(input)?;
-    Ok((input, Token::Static(String::from_iter(output))))
+    map(many1(none_of("{")), |s| Token::Static(String::from_iter(s)))(input)
 }
 
 fn escaped_opening_brace(input: &str) -> IResult<&str, Token> {
-    let (input, output) = tag("{{")(input)?;
-    Ok((input, Token::Static(output.to_string())))
+    map(tag("{{"), |s: &str| Token::Static(s.to_owned()))(input)
+}
+
+fn start_identifier_end(input: &str) -> IResult<&str, String> {
+    terminated(preceded(tag("{"), identifier), tag("}"))(input)
+}
+
+fn style_token(input: &str) -> IResult<&str, StyleToken> {
+    map_res(start_identifier_end, |s: String| s.parse::<StyleToken>())(input)
 }
 
 fn style(input: &str) -> IResult<&str, Token> {
-    let (input, output) = map_res(
-        terminated(preceded(tag("{"), identifier), tag("}")),
-        |s: String| s.parse::<StyleToken>(),
-    )(input)?;
-    Ok((input, Token::Style(output)))
+    map(style_token, |s| Token::Style(s))(input)
 }
 
 // TODO: Handle spaces
 fn if_start(input: &str) -> IResult<&str, ()> {
-    let (input, _) = tag("{")(input)?;
-    let (input, _) = tag("if")(input)?;
-    Ok((input, ()))
+    map(pair(tag("{"), tag("if")), |_| ())(input)
 }
 
 fn if_condition(input: &str) -> IResult<&str, Condition> {
-    let (input, condition) = map_res(identifier, |s: String| s.parse::<Condition>())(input)?;
-    Ok((input, condition))
+    map_res(identifier, |s: String| s.parse::<Condition>())(input)
 }
 
 fn end(input: &str) -> IResult<&str, ()> {
-    let (input, _) = tag("{end}")(input)?;
-    Ok((input, ()))
+    map(tag("{end}"), |_| ())(input)
 }
 
 fn if_else(input: &str) -> IResult<&str, ()> {
-    let (input, _) = tag("{else}")(input)?;
-    Ok((input, ()))
+    map(tag("{else}"), |_| ())(input)
 }
 
 fn conditional(input: &str) -> IResult<&str, Token> {
@@ -81,12 +78,18 @@ fn conditional(input: &str) -> IResult<&str, Token> {
     Ok((input, conditional))
 }
 
+fn key(input: &str) -> IResult<&str, String> {
+    map(preceded(multispace0, many1(none_of("="))), |s| {
+        String::from_iter(s)
+    })(input)
+}
+
+fn value(input: &str) -> IResult<&str, String> {
+    map(many1(none_of("} ")), |s| String::from_iter(s))(input)
+}
+
 fn key_value(input: &str) -> IResult<&str, (String, String)> {
-    let (input, _) = multispace0(input)?;
-    let (input, key) = many1(none_of("="))(input)?;
-    let (input, _) = tag("=")(input)?;
-    let (input, value) = many1(none_of("} "))(input)?;
-    Ok((input, (String::from_iter(key), String::from_iter(value))))
+    separated_pair(key, tag("="), value)(input)
 }
 
 fn underscore(input: &str) -> IResult<&str, &str> {
