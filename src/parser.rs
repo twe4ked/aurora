@@ -5,7 +5,7 @@ use nom::bytes::complete::tag;
 use nom::character::complete::{alpha1, multispace0, none_of};
 use nom::combinator::{map, map_res, opt, verify};
 use nom::multi::{many0, many1};
-use nom::sequence::{pair, preceded, separated_pair, terminated};
+use nom::sequence::{pair, preceded, separated_pair, terminated, tuple};
 use nom::IResult;
 use std::collections::HashSet;
 use std::iter::FromIterator;
@@ -32,50 +32,52 @@ fn style(input: &str) -> IResult<&str, Token> {
 
 // TODO: Handle spaces
 fn if_start(input: &str) -> IResult<&str, ()> {
-    map(pair(tag("{"), tag("if")), |_| ())(input)
+    map(pair(tag("{"), preceded(multispace0, tag("if"))), |_| ())(input)
 }
 
 fn if_condition(input: &str) -> IResult<&str, Condition> {
-    map_res(identifier, |s: String| s.parse::<Condition>())(input)
+    terminated(
+        preceded(
+            multispace0,
+            map_res(identifier, |s: String| s.parse::<Condition>()),
+        ),
+        tag("}"),
+    )(input)
 }
 
 fn end(input: &str) -> IResult<&str, ()> {
     map(tag("{end}"), |_| ())(input)
 }
 
-fn if_else(input: &str) -> IResult<&str, ()> {
+fn if_else_tag(input: &str) -> IResult<&str, ()> {
     map(tag("{else}"), |_| ())(input)
 }
 
+fn if_else_branch(input: &str) -> IResult<&str, Vec<Token>> {
+    preceded(if_else_tag, tokens)(input)
+}
+
 fn conditional(input: &str) -> IResult<&str, Token> {
-    // {if condition}
-    let (input, _) = if_start(input)?;
-    let (input, _) = multispace0(input)?;
-    let (input, condition) = if_condition(input)?;
-    let (input, _) = tag("}")(input)?;
-
-    // foo bar baz
-    let (input, left) = tokens(input)?;
-
-    // {else}
-    let (input, if_else) = opt(if_else)(input)?;
-    let (input, right) = if if_else.is_some() {
-        let (input, output) = tokens(input)?;
-        (input, Some(output))
-    } else {
-        (input, None)
-    };
-
-    // {end}
-    let (input, _) = end(input)?;
-
-    let conditional = Token::Conditional {
-        condition,
-        left,
-        right,
-    };
-
-    Ok((input, conditional))
+    map(
+        tuple((
+            // {if condition}
+            preceded(if_start, if_condition),
+            // foo bar baz
+            tokens,
+            terminated(
+                // {else}
+                // foo bar baz
+                opt(if_else_branch),
+                // {end}
+                end,
+            ),
+        )),
+        |(condition, left, right)| Token::Conditional {
+            condition,
+            left,
+            right,
+        },
+    )(input)
 }
 
 fn key(input: &str) -> IResult<&str, String> {
