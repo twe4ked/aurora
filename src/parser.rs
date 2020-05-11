@@ -7,7 +7,7 @@ use nom::combinator::{map, map_res, opt, verify};
 use nom::multi::{many0, many1};
 use nom::sequence::{pair, preceded, separated_pair, terminated, tuple};
 use nom::IResult;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::iter::FromIterator;
 
 fn any_char_except_opening_brace(input: &str) -> IResult<&str, Token> {
@@ -94,6 +94,10 @@ fn key_value(input: &str) -> IResult<&str, (String, String)> {
     separated_pair(key, tag("="), value)(input)
 }
 
+fn key_values(input: &str) -> IResult<&str, HashMap<String, String>> {
+    map(many0(key_value), |options| options.into_iter().collect())(input)
+}
+
 fn underscore(input: &str) -> IResult<&str, &str> {
     tag("_")(input)
 }
@@ -111,14 +115,19 @@ fn identifier(input: &str) -> IResult<&str, String> {
 }
 
 fn component(input: &str) -> IResult<&str, Token> {
-    let (input, _) = tag("{")(input)?;
-    let (input, _) = multispace0(input)?;
-    let (input, name) = map_res(identifier, |s: String| s.parse::<Component>())(input)?;
-    let (input, options) = many0(key_value)(input)?;
-    let options = options.into_iter().collect();
-    let (input, _) = multispace0(input)?;
-    let (input, _) = tag("}")(input)?;
-    Ok((input, Token::Component { name, options }))
+    map(
+        tuple((
+            preceded(
+                tag("{"),
+                preceded(
+                    multispace0,
+                    map_res(identifier, |s: String| s.parse::<Component>()),
+                ),
+            ),
+            terminated(key_values, preceded(multispace0, tag("}"))),
+        )),
+        |(name, options)| Token::Component { name, options },
+    )(input)
 }
 
 fn tokens(input: &str) -> IResult<&str, Vec<Token>> {
