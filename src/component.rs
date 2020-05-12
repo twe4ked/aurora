@@ -97,7 +97,7 @@ fn into_groups(components: Vec<Option<Component>>) -> Vec<Vec<Option<Component>>
             let mut map = HashMap::new();
             map.insert(0, Vec::new());
             Groups {
-                map: map,
+                map,
                 current_group_index: 0,
             }
         }
