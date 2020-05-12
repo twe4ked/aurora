@@ -3,7 +3,7 @@ use anyhow::Result;
 use nom::branch::alt;
 use nom::bytes::complete::tag;
 use nom::character::complete::{alpha1, multispace0, none_of};
-use nom::combinator::{map, map_res, opt, verify};
+use nom::combinator::{all_consuming, map, map_res, opt, verify};
 use nom::multi::{many0, many1};
 use nom::sequence::{pair, preceded, separated_pair, terminated, tuple};
 use nom::IResult;
@@ -144,12 +144,10 @@ fn tokens(input: &str) -> IResult<&str, Vec<Token>> {
 }
 
 pub fn parse(input: &str) -> Result<Vec<Token>> {
-    if let Ok((input, tokens)) = tokens(input) {
-        if input.is_empty() {
-            return Ok(tokens);
-        }
+    match all_consuming(tokens)(input) {
+        Ok((_input, tokens)) => Ok(tokens),
+        Err(_) => Err(anyhow::anyhow!("parse error: {}", input)),
     }
-    Err(anyhow::anyhow!("parse error: {}", input))
 }
 
 #[cfg(test)]
@@ -308,5 +306,10 @@ mod tests {
                 right: Some(vec![Token::Static("right".to_string())]),
             }]
         );
+    }
+
+    #[test]
+    fn it_ensures_all_input_is_consumed() {
+        assert!(parse(&"foo{git_branch bar=").is_err());
     }
 }
