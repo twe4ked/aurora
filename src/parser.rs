@@ -53,7 +53,7 @@ fn style(input: &str) -> IResult<&str, Token> {
 }
 
 fn if_start(input: &str) -> IResult<&str, ()> {
-    map(pair(start_tag, tag("if")), |_| ())(input)
+    map(pair(start_tag, tag("if")), drop)(input)
 }
 
 fn if_condition(input: &str) -> IResult<&str, Condition> {
@@ -64,11 +64,11 @@ fn if_condition(input: &str) -> IResult<&str, Condition> {
 }
 
 fn end(input: &str) -> IResult<&str, ()> {
-    map(tag("{end}"), |_| ())(input)
+    map(tag("{end}"), drop)(input)
 }
 
 fn if_else_tag(input: &str) -> IResult<&str, ()> {
-    map(tag("{else}"), |_| ())(input)
+    map(tag("{else}"), drop)(input)
 }
 
 fn if_else_branch(input: &str) -> IResult<&str, Vec<Token>> {
