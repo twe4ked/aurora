@@ -52,7 +52,7 @@ pub fn components_from_tokens(
                     token::Component::GitCommit => git_commit::display(&context),
                     token::Component::GitStash => git_stash::display(&mut context),
                     token::Component::GitStatus => git_status::display(&context)?,
-                    token::Component::Jobs => jobs::display(jobs.clone()),
+                    token::Component::Jobs => jobs::display(jobs),
                     token::Component::Cwd => cwd::display(&context, options.remove("style")),
                 };
 
