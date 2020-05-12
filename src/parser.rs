@@ -49,7 +49,7 @@ fn style_token(input: &str) -> IResult<&str, StyleToken> {
 }
 
 fn style(input: &str) -> IResult<&str, Token> {
-    map(style_token, |s| Token::Style(s))(input)
+    map(style_token, Token::Style)(input)
 }
 
 fn if_start(input: &str) -> IResult<&str, ()> {
