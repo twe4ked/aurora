@@ -1,20 +1,19 @@
 use crate::token::{Component, Condition, StyleToken, Token};
 use anyhow::Result;
 use nom::branch::alt;
-use nom::bytes::complete::tag;
+use nom::bytes::complete::{tag, take_while};
 use nom::character::complete::{alpha1, multispace0, none_of};
 use nom::combinator::{all_consuming, map, map_res, opt, recognize, verify};
 use nom::multi::{many0, many1};
 use nom::sequence::{pair, preceded, separated_pair, terminated, tuple};
 use nom::IResult;
 use once_cell::sync::Lazy;
-use std::collections::{HashMap, HashSet};
-use std::iter::FromIterator;
+use std::collections::HashSet;
 
-static RESERVED_KEYWORDS: Lazy<HashSet<String>> = Lazy::new(|| {
+static RESERVED_KEYWORDS: Lazy<HashSet<&str>> = Lazy::new(|| {
     let mut s = HashSet::new();
-    s.insert("end".to_string());
-    s.insert("else".to_string());
+    s.insert("end");
+    s.insert("else");
     s
 });
 
@@ -33,12 +32,12 @@ fn escaped_opening_brace(input: &str) -> IResult<&str, &str> {
     tag("{{")(input)
 }
 
-fn start_identifier_end(input: &str) -> IResult<&str, String> {
+fn start_identifier_end(input: &str) -> IResult<&str, &str> {
     terminated(preceded(tag("{"), identifier), tag("}"))(input)
 }
 
 fn style_token(input: &str) -> IResult<&str, StyleToken> {
-    map_res(start_identifier_end, |s: String| s.parse::<StyleToken>())(input)
+    map_res(start_identifier_end, |s: &str| s.parse::<StyleToken>())(input)
 }
 
 fn style(input: &str) -> IResult<&str, Token> {
@@ -52,10 +51,7 @@ fn if_start(input: &str) -> IResult<&str, ()> {
 
 fn if_condition(input: &str) -> IResult<&str, Condition> {
     terminated(
-        preceded(
-            multispace0,
-            map_res(identifier, |s: String| s.parse::<Condition>()),
-        ),
+        preceded(multispace0, map_res(identifier, |s| s.parse::<Condition>())),
         tag("}"),
     )(input)
 }
@@ -95,33 +91,30 @@ fn conditional(input: &str) -> IResult<&str, Token> {
     )(input)
 }
 
-fn key(input: &str) -> IResult<&str, String> {
-    map(preceded(multispace0, many1(none_of("="))), |s| {
-        String::from_iter(s)
-    })(input)
+fn key(input: &str) -> IResult<&str, &str> {
+    preceded(multispace0, alpha1)(input)
 }
 
-fn value(input: &str) -> IResult<&str, String> {
-    map(many1(none_of("} ")), |s| String::from_iter(s))(input)
+fn value(input: &str) -> IResult<&str, &str> {
+    take_while(move |s| !"} ".contains(s))(input)
 }
 
-fn key_value(input: &str) -> IResult<&str, (String, String)> {
+fn key_value(input: &str) -> IResult<&str, (&str, &str)> {
     separated_pair(key, tag("="), value)(input)
 }
 
-fn key_values(input: &str) -> IResult<&str, HashMap<String, String>> {
-    map(many0(key_value), |options| options.into_iter().collect())(input)
+fn key_values(input: &str) -> IResult<&str, Vec<(&str, &str)>> {
+    many0(key_value)(input)
 }
 
 fn underscore(input: &str) -> IResult<&str, &str> {
     tag("_")(input)
 }
 
-fn identifier(input: &str) -> IResult<&str, String> {
-    verify(
-        map(many1(alt((alpha1, underscore))), |s| String::from_iter(s)),
-        |s: &str| !RESERVED_KEYWORDS.contains(s),
-    )(input)
+fn identifier(input: &str) -> IResult<&str, &str> {
+    verify(recognize(many1(alt((alpha1, underscore)))), |s: &str| {
+        !RESERVED_KEYWORDS.contains(s)
+    })(input)
 }
 
 fn component(input: &str) -> IResult<&str, Token> {
@@ -129,14 +122,17 @@ fn component(input: &str) -> IResult<&str, Token> {
         tuple((
             preceded(
                 tag("{"),
-                preceded(
-                    multispace0,
-                    map_res(identifier, |s: String| s.parse::<Component>()),
-                ),
+                preceded(multispace0, map_res(identifier, |s| s.parse::<Component>())),
             ),
             terminated(key_values, preceded(multispace0, tag("}"))),
         )),
-        |(name, options)| Token::Component { name, options },
+        |(name, options)| {
+            let options = options
+                .into_iter()
+                .map(|(k, v)| (k.to_owned(), v.to_owned()))
+                .collect();
+            Token::Component { name, options }
+        },
     )(input)
 }
 
