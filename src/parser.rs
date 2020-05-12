@@ -111,10 +111,10 @@ fn underscore(input: &str) -> IResult<&str, &str> {
 }
 
 fn identifier(input: &str) -> IResult<&str, String> {
-    let find_ident = many1(alt((alpha1, underscore)));
-    let map_ident = map(find_ident, |ident: Vec<&str>| String::from_iter(ident));
-    let verify_ident = verify(map_ident, |ident: &str| !RESERVED_KEYWORDS.contains(ident));
-    verify_ident(input)
+    verify(
+        map(many1(alt((alpha1, underscore))), |s| String::from_iter(s)),
+        |s: &str| !RESERVED_KEYWORDS.contains(s),
+    )(input)
 }
 
 fn component(input: &str) -> IResult<&str, Token> {
