@@ -33,7 +33,10 @@ fn escaped_opening_brace(input: &str) -> IResult<&str, &str> {
 }
 
 fn start_identifier_end(input: &str) -> IResult<&str, &str> {
-    terminated(preceded(tag("{"), identifier), tag("}"))(input)
+    terminated(
+        preceded(tag("{"), preceded(multispace0, identifier)),
+        preceded(multispace0, tag("}")),
+    )(input)
 }
 
 fn style_token(input: &str) -> IResult<&str, StyleToken> {
@@ -316,5 +319,21 @@ mod tests {
     #[test]
     fn it_ensures_all_input_is_consumed() {
         assert!(parse(&"foo{git_branch bar=").is_err());
+    }
+
+    #[test]
+    fn it_parses_style_components() {
+        assert_eq!(
+            parse(&"{green}").unwrap(),
+            vec![Token::Style(StyleToken::Green)]
+        );
+    }
+
+    #[test]
+    fn it_parses_style_with_whitespace() {
+        assert_eq!(
+            parse(&"{  green  }").unwrap(),
+            vec![Token::Style(StyleToken::Green)]
+        );
     }
 }
