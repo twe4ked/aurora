@@ -3,7 +3,7 @@ use anyhow::Result;
 use nom::branch::alt;
 use nom::bytes::complete::tag;
 use nom::character::complete::{alpha1, multispace0, none_of};
-use nom::combinator::{all_consuming, map, map_res, opt, verify};
+use nom::combinator::{all_consuming, map, map_res, opt, recognize, verify};
 use nom::multi::{many0, many1};
 use nom::sequence::{pair, preceded, separated_pair, terminated, tuple};
 use nom::IResult;
@@ -18,12 +18,19 @@ static RESERVED_KEYWORDS: Lazy<HashSet<String>> = Lazy::new(|| {
     s
 });
 
-fn any_char_except_opening_brace(input: &str) -> IResult<&str, Token> {
-    map(many1(none_of("{")), |s| Token::Static(String::from_iter(s)))(input)
+fn static_component(input: &str) -> IResult<&str, Token> {
+    map(
+        alt((any_char_except_opening_brace, escaped_opening_brace)),
+        |s| Token::Static(s.to_owned()),
+    )(input)
 }
 
-fn escaped_opening_brace(input: &str) -> IResult<&str, Token> {
-    map(tag("{{"), |s: &str| Token::Static(s.to_owned()))(input)
+fn any_char_except_opening_brace(input: &str) -> IResult<&str, &str> {
+    recognize(many1(none_of("{")))(input)
+}
+
+fn escaped_opening_brace(input: &str) -> IResult<&str, &str> {
+    tag("{{")(input)
 }
 
 fn start_identifier_end(input: &str) -> IResult<&str, String> {
@@ -134,13 +141,7 @@ fn component(input: &str) -> IResult<&str, Token> {
 }
 
 fn tokens(input: &str) -> IResult<&str, Vec<Token>> {
-    many1(alt((
-        any_char_except_opening_brace,
-        escaped_opening_brace,
-        style,
-        conditional,
-        component,
-    )))(input)
+    many1(alt((static_component, style, conditional, component)))(input)
 }
 
 pub fn parse(input: &str) -> Result<Vec<Token>> {
@@ -225,7 +226,15 @@ mod tests {
     }
 
     #[test]
-    fn it_allows_escaped_braces_as_char() {
+    fn it_parses_static() {
+        assert_eq!(
+            parse(&"cwd").unwrap(),
+            vec![Token::Static("cwd".to_string()),]
+        );
+    }
+
+    #[test]
+    fn it_allows_escaped_braces_as_static() {
         assert_eq!(
             parse(&"{{cwd").unwrap(),
             vec![
