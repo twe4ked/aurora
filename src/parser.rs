@@ -7,8 +7,16 @@ use nom::combinator::{map, map_res, opt, verify};
 use nom::multi::{many0, many1};
 use nom::sequence::{pair, preceded, separated_pair, terminated, tuple};
 use nom::IResult;
+use once_cell::sync::Lazy;
 use std::collections::{HashMap, HashSet};
 use std::iter::FromIterator;
+
+static RESERVED_KEYWORDS: Lazy<HashSet<String>> = Lazy::new(|| {
+    let mut s = HashSet::new();
+    s.insert("end".to_string());
+    s.insert("else".to_string());
+    s
+});
 
 fn any_char_except_opening_brace(input: &str) -> IResult<&str, Token> {
     map(many1(none_of("{")), |s| Token::Static(String::from_iter(s)))(input)
@@ -103,14 +111,9 @@ fn underscore(input: &str) -> IResult<&str, &str> {
 }
 
 fn identifier(input: &str) -> IResult<&str, String> {
-    // TODO: Move to static
-    let mut reserved = HashSet::new();
-    reserved.insert("end".to_string());
-    reserved.insert("else".to_string());
-
     let find_ident = many1(alt((alpha1, underscore)));
     let map_ident = map(find_ident, |ident: Vec<&str>| String::from_iter(ident));
-    let verify_ident = verify(map_ident, |ident: &str| !reserved.contains(ident));
+    let verify_ident = verify(map_ident, |ident: &str| !RESERVED_KEYWORDS.contains(ident));
     verify_ident(input)
 }
 
