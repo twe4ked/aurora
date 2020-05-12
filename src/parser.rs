@@ -1,7 +1,7 @@
 use crate::token::{Component, Condition, StyleToken, Token};
 use anyhow::Result;
 use nom::branch::alt;
-use nom::bytes::complete::{tag, take_while};
+use nom::bytes::complete::tag;
 use nom::character::complete::{alpha1, multispace0, none_of};
 use nom::combinator::{all_consuming, map, map_res, opt, recognize, verify};
 use nom::multi::{many0, many1};
@@ -32,11 +32,16 @@ fn escaped_opening_brace(input: &str) -> IResult<&str, &str> {
     tag("{{")(input)
 }
 
+fn start_tag(input: &str) -> IResult<&str, &str> {
+    terminated(tag("{"), multispace0)(input)
+}
+
+fn end_tag(input: &str) -> IResult<&str, &str> {
+    preceded(multispace0, tag("}"))(input)
+}
+
 fn start_identifier_end(input: &str) -> IResult<&str, &str> {
-    terminated(
-        preceded(tag("{"), preceded(multispace0, identifier)),
-        preceded(multispace0, tag("}")),
-    )(input)
+    terminated(preceded(start_tag, identifier), end_tag)(input)
 }
 
 fn style_token(input: &str) -> IResult<&str, StyleToken> {
@@ -47,15 +52,14 @@ fn style(input: &str) -> IResult<&str, Token> {
     map(style_token, |s| Token::Style(s))(input)
 }
 
-// TODO: Handle spaces
 fn if_start(input: &str) -> IResult<&str, ()> {
-    map(pair(tag("{"), preceded(multispace0, tag("if"))), |_| ())(input)
+    map(pair(start_tag, tag("if")), |_| ())(input)
 }
 
 fn if_condition(input: &str) -> IResult<&str, Condition> {
     terminated(
         preceded(multispace0, map_res(identifier, |s| s.parse::<Condition>())),
-        tag("}"),
+        end_tag,
     )(input)
 }
 
@@ -99,7 +103,7 @@ fn key(input: &str) -> IResult<&str, &str> {
 }
 
 fn value(input: &str) -> IResult<&str, &str> {
-    take_while(move |s| !"} ".contains(s))(input)
+    recognize(many1(none_of("} ")))(input)
 }
 
 fn key_value(input: &str) -> IResult<&str, (&str, &str)> {
@@ -123,11 +127,8 @@ fn identifier(input: &str) -> IResult<&str, &str> {
 fn component(input: &str) -> IResult<&str, Token> {
     map(
         tuple((
-            preceded(
-                tag("{"),
-                preceded(multispace0, map_res(identifier, |s| s.parse::<Component>())),
-            ),
-            terminated(key_values, preceded(multispace0, tag("}"))),
+            preceded(start_tag, map_res(identifier, |s| s.parse::<Component>())),
+            terminated(key_values, end_tag),
         )),
         |(name, options)| {
             let options = options
