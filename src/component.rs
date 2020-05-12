@@ -113,7 +113,7 @@ fn into_groups(components: Vec<Option<Component>>) -> Vec<Vec<Option<Component>>
             let group = self
                 .map
                 .entry(self.current_group_index)
-                .or_insert(Vec::new());
+                .or_insert_with(Vec::new);
             group.push(component)
         }
 
