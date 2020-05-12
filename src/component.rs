@@ -74,12 +74,10 @@ pub fn components_from_tokens(
                     components.append(&mut components_from_tokens(
                         left, context, shell, jobs, status,
                     )?);
-                } else {
-                    if let Some(right) = right {
-                        components.append(&mut components_from_tokens(
-                            right, context, shell, jobs, status,
-                        )?);
-                    }
+                } else if let Some(right) = right {
+                    components.append(&mut components_from_tokens(
+                        right, context, shell, jobs, status,
+                    )?);
                 }
             }
         };
