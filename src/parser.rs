@@ -4,12 +4,14 @@ use nom::branch::alt;
 use nom::bytes::complete::tag;
 use nom::character::complete::{alpha1, multispace0, none_of};
 use nom::combinator::{all_consuming, map, map_res, opt, recognize, verify};
+use nom::error::{convert_error, VerboseError};
 use nom::multi::{many0, many1};
 use nom::sequence::{pair, preceded, separated_pair, terminated, tuple};
-use nom::IResult;
 use once_cell::sync::Lazy;
 use std::collections::HashSet;
 use std::convert::TryFrom;
+
+type IResult<I, O> = nom::IResult<I, O, VerboseError<I>>;
 
 static RESERVED_KEYWORDS: Lazy<HashSet<&str>> = Lazy::new(|| {
     let mut s = HashSet::new();
@@ -148,7 +150,11 @@ fn tokens(input: &str) -> IResult<&str, Vec<Token>> {
 pub fn parse(input: &str) -> Result<Vec<Token>> {
     match all_consuming(tokens)(input) {
         Ok((_input, tokens)) => Ok(tokens),
-        Err(_) => Err(anyhow::anyhow!("parse error: {}", input)),
+        Err(nom::Err::Error(e)) | Err(nom::Err::Failure(e)) => {
+            let message = convert_error(input, e);
+            Err(anyhow::anyhow!("parse error:\n\n{}", message.trim_end()))
+        }
+        Err(e) => Err(anyhow::anyhow!("parse error: {}", e)),
     }
 }
 

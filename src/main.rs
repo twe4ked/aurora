@@ -58,7 +58,7 @@ fn main() {
         SubCommand::Run(o) => run(o),
     }
     .unwrap_or_else(|err| {
-        eprintln!("error: {}", err);
+        eprintln!("{}", err);
         std::process::exit(1);
     });
 }
