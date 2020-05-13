@@ -9,6 +9,7 @@ use nom::sequence::{pair, preceded, separated_pair, terminated, tuple};
 use nom::IResult;
 use once_cell::sync::Lazy;
 use std::collections::HashSet;
+use std::convert::TryFrom;
 
 static RESERVED_KEYWORDS: Lazy<HashSet<&str>> = Lazy::new(|| {
     let mut s = HashSet::new();
@@ -45,7 +46,7 @@ fn start_identifier_end(input: &str) -> IResult<&str, &str> {
 }
 
 fn style_token(input: &str) -> IResult<&str, StyleToken> {
-    map_res(start_identifier_end, |s: &str| s.parse::<StyleToken>())(input)
+    map_res(start_identifier_end, StyleToken::try_from)(input)
 }
 
 fn style(input: &str) -> IResult<&str, Token> {
@@ -58,7 +59,7 @@ fn if_start(input: &str) -> IResult<&str, ()> {
 
 fn if_condition(input: &str) -> IResult<&str, Condition> {
     terminated(
-        preceded(multispace0, map_res(identifier, |s| s.parse::<Condition>())),
+        preceded(multispace0, map_res(identifier, Condition::try_from)),
         end_tag,
     )(input)
 }
@@ -127,7 +128,7 @@ fn identifier(input: &str) -> IResult<&str, &str> {
 fn component(input: &str) -> IResult<&str, Token> {
     map(
         tuple((
-            preceded(start_tag, map_res(identifier, |s| s.parse::<Component>())),
+            preceded(start_tag, map_res(identifier, Component::try_from)),
             terminated(key_values, end_tag),
         )),
         |(name, options)| {

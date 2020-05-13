@@ -1,6 +1,7 @@
 //! Tokens are parsed from the users provided configuration.
 
 use std::collections::HashMap;
+use std::convert::TryFrom;
 
 #[derive(Debug, PartialEq)]
 pub enum StyleToken {
@@ -22,12 +23,12 @@ pub enum StyleToken {
     Reset,
 }
 
-impl std::str::FromStr for StyleToken {
-    type Err = ();
+impl TryFrom<&str> for StyleToken {
+    type Error = ();
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
         use StyleToken::*;
-        match s {
+        match value {
             "black" => Ok(Black),
             "dark_grey" => Ok(DarkGrey),
             "blue" => Ok(Blue),
@@ -54,11 +55,11 @@ pub enum Condition {
     LastCommandStatus,
 }
 
-impl std::str::FromStr for Condition {
-    type Err = ();
+impl TryFrom<&str> for Condition {
+    type Error = ();
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        match value {
             "last_command_status" => Ok(Condition::LastCommandStatus),
             _ => Err(()),
         }
@@ -75,11 +76,11 @@ pub enum Component {
     Jobs,
 }
 
-impl std::str::FromStr for Component {
-    type Err = ();
+impl TryFrom<&str> for Component {
+    type Error = ();
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        match value {
             "cwd" => Ok(Component::Cwd),
             "git_branch" => Ok(Component::GitBranch),
             "git_commit" => Ok(Component::GitCommit),
