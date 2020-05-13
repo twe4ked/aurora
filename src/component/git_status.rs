@@ -6,6 +6,7 @@ use git2::{Status, StatusEntry};
 // + New file added to the working tree
 // * File modified in the working tree
 // - File deleted from the working tree
+// ^ A change is staged
 pub fn display(context: &Context) -> Result<Option<Component>> {
     if let Some(repo_status) = repo_status(context)? {
         let mut output = String::new();
@@ -20,6 +21,16 @@ pub fn display(context: &Context) -> Result<Option<Component>> {
 
         if repo_status.is_wt_deleted() {
             output.push('-');
+        }
+
+        if repo_status.intersects(
+            Status::INDEX_NEW
+                | Status::INDEX_MODIFIED
+                | Status::INDEX_DELETED
+                | Status::INDEX_RENAMED
+                | Status::INDEX_TYPECHANGE,
+        ) {
+            output.push('^');
         }
 
         if !output.is_empty() {
