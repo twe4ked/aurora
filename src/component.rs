@@ -61,7 +61,13 @@ pub fn components_from_tokens(
                 };
 
                 if !options.is_empty() {
-                    return Err(anyhow::anyhow!("invalid options"));
+                    let options = options
+                        .iter()
+                        .map(|(k, v)| format!("{}={}", k, v))
+                        .collect::<Vec<_>>()
+                        .join(", ");
+
+                    return Err(anyhow::anyhow!("error: invalid options: {}", options));
                 }
 
                 components.push(c);
