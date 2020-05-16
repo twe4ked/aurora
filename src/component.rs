@@ -56,10 +56,12 @@ pub fn components_from_tokens(
                     token::Component::GitStatus => git_status::display(&context)?,
                     token::Component::Hostname => hostname::display(),
                     token::Component::Jobs => jobs::display(jobs),
-                    token::Component::Cwd => cwd::display(&context, options.remove("style"))?,
+                    token::Component::Cwd => cwd::display(&context, &mut options)?,
                     token::Component::User => user::display(),
                 };
 
+                // Components should use all the options they are given by removing them from the
+                // collection.
                 if !options.is_empty() {
                     let options = options
                         .iter()

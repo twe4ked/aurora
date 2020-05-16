@@ -4,11 +4,12 @@ use crate::Context;
 
 use anyhow::Result;
 
+use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::path::{Path, PathBuf};
 
 #[derive(Debug, PartialEq)]
-pub enum CwdStyle {
+enum CwdStyle {
     Default,
     Long,
     Short,
@@ -27,15 +28,29 @@ impl TryFrom<String> for CwdStyle {
     }
 }
 
-pub fn display(context: &Context, style: Option<String>) -> Result<Option<Component>> {
-    let style = match style {
-        Some(s) => CwdStyle::try_from(s)?,
-        None => CwdStyle::Default,
-    };
+struct Options {
+    style: CwdStyle,
+}
+
+impl Options {
+    fn extract(options: &mut HashMap<String, String>) -> Result<Self> {
+        let style = match options.remove("style") {
+            Some(s) => CwdStyle::try_from(s)?,
+            None => CwdStyle::Default,
+        };
+        Ok(Self { style })
+    }
+}
+
+pub fn display(
+    context: &Context,
+    mut options: &mut HashMap<String, String>,
+) -> Result<Option<Component>> {
+    let options = Options::extract(&mut options)?;
 
     let current_dir = context.current_dir();
     Ok(Some(Component::Computed(
-        cwd(&context, &style, &current_dir).unwrap_or_else(|_| long(&current_dir).unwrap()),
+        cwd(&context, &options.style, &current_dir).unwrap_or_else(|_| long(&current_dir).unwrap()),
     )))
 }
 
