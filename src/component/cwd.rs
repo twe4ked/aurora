@@ -1,5 +1,4 @@
 use crate::component::Component;
-use crate::error::Error;
 use crate::utility::wrap_no_change_cursor_position;
 use crate::Context;
 use crate::Shell;
@@ -67,45 +66,28 @@ pub fn display(
 ) -> Result<Option<Component>> {
     let options = Options::extract(&mut options)?;
 
-    let current_dir = context.current_dir();
-    Ok(Some(Component::Computed(
-        cwd(&context, &options, &current_dir, shell)
-            .unwrap_or_else(|_| long(&current_dir).unwrap()),
-    )))
-}
+    let output = match options.style {
+        CwdStyle::Default => default(context.current_dir()),
+        CwdStyle::Short => short(
+            &context.current_dir(),
+            &dirs::home_dir().unwrap_or_default(),
+            context.git_repository().map(|r| r.path()),
+            options.underline_repo,
+            shell,
+        ),
+        CwdStyle::Long => long(context.current_dir()),
+    };
 
-fn cwd(
-    context: &Context,
-    options: &Options,
-    current_dir: &PathBuf,
-    shell: &Shell,
-) -> Result<String, Error> {
-    match options.style {
-        CwdStyle::Default => {
-            let home_dir = dirs::home_dir().unwrap_or_default();
-            Ok(replace_home_dir(current_dir, &home_dir))
-        }
-        CwdStyle::Short => {
-            let home_dir = dirs::home_dir().unwrap_or_default();
-            let git_path = match context.git_repository() {
-                Some(r) => Some(r.path()),
-                None => None,
-            };
-            short(
-                &current_dir,
-                &home_dir,
-                git_path,
-                options.underline_repo,
-                shell,
-            )
-        }
-        CwdStyle::Long => long(current_dir),
-    }
+    Ok(Some(Component::Computed(output)))
 }
 
 /// Replace the home directory portion of the path with "~/"
 fn replace_home_dir(current_dir: &PathBuf, home_dir: &PathBuf) -> String {
     format!("{}", current_dir.display()).replacen(&format!("{}", home_dir.display()), "~", 1)
+}
+
+fn default(current_dir: &PathBuf) -> String {
+    replace_home_dir(current_dir, &dirs::home_dir().unwrap_or_default())
 }
 
 fn short(
@@ -114,7 +96,7 @@ fn short(
     git_path: Option<&Path>,
     underline_repo: bool,
     shell: &Shell,
-) -> Result<String, Error> {
+) -> String {
     let git_path_length = git_path.map(|git_path| {
         let git_path = git_path.parent().unwrap(); // Remove ".git"
         let git_path = replace_home_dir(&git_path.to_path_buf(), &home_dir);
@@ -124,7 +106,7 @@ fn short(
     let full_path = replace_home_dir(&full_path, &home_dir);
     let full_path_length = full_path.split('/').count();
 
-    Ok(full_path
+    full_path
         .split('/')
         .enumerate()
         .map(|(i, part)| {
@@ -152,11 +134,11 @@ fn short(
             }
         })
         .collect::<Vec<_>>()
-        .join("/"))
+        .join("/")
 }
 
-fn long(current_dir: &PathBuf) -> Result<String, Error> {
-    Ok(format!("{}", current_dir.display()))
+fn long(current_dir: &PathBuf) -> String {
+    format!("{}", current_dir.display())
 }
 
 #[cfg(test)]
@@ -189,13 +171,13 @@ mod tests {
         let git_root = Path::new("/home/foo/axx/bxx/repo/.git");
 
         assert_eq!(
-            short(&current_dir, &home_dir, Some(&git_root), false, &Shell::Zsh).unwrap(),
+            short(&current_dir, &home_dir, Some(&git_root), false, &Shell::Zsh),
             "~/a/b/repo/c/dxx".to_string()
         );
 
         let current_dir = PathBuf::from("/home/foo/axx/bxx/repo");
         assert_eq!(
-            short(&current_dir, &home_dir, Some(&git_root), false, &Shell::Zsh).unwrap(),
+            short(&current_dir, &home_dir, Some(&git_root), false, &Shell::Zsh),
             "~/a/b/repo".to_string()
         );
     }
@@ -207,7 +189,7 @@ mod tests {
         let git_root = Path::new("/home/foo/axx/.git");
 
         assert_eq!(
-            short(&current_dir, &home_dir, Some(&git_root), false, &Shell::Zsh).unwrap(),
+            short(&current_dir, &home_dir, Some(&git_root), false, &Shell::Zsh),
             "~/axx".to_string()
         );
     }
@@ -219,7 +201,7 @@ mod tests {
         let git_root = Path::new("/foo/bar/axx/.git");
 
         assert_eq!(
-            short(&current_dir, &home_dir, Some(&git_root), false, &Shell::Zsh).unwrap(),
+            short(&current_dir, &home_dir, Some(&git_root), false, &Shell::Zsh),
             "/f/b/axx/b/c/dxx".to_string()
         );
     }
@@ -230,7 +212,7 @@ mod tests {
         let home_dir = PathBuf::from("/home/baz");
 
         assert_eq!(
-            short(&current_dir, &home_dir, None, false, &Shell::Zsh).unwrap(),
+            short(&current_dir, &home_dir, None, false, &Shell::Zsh),
             "/f/b/a/b/c/dxx".to_string()
         );
     }
@@ -241,7 +223,7 @@ mod tests {
         let home_dir = PathBuf::from("/home/baz");
 
         assert_eq!(
-            short(&current_dir, &home_dir, None, false, &Shell::Zsh).unwrap(),
+            short(&current_dir, &home_dir, None, false, &Shell::Zsh),
             "/.a/./../.dxx".to_string()
         );
     }
