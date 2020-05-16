@@ -16,12 +16,11 @@ enum Style {
     Short { underline_repo: bool },
 }
 
-fn parse_boolean(input: Option<String>) -> Result<bool> {
-    match input.as_ref().map(|s| &s[..]) {
-        Some("true") => Ok(true),
-        Some("false") => Ok(false),
-        Some(s) => Err(anyhow::anyhow!("error: invalid boolean: {}", s)),
-        None => Ok(false),
+fn parse_boolean(input: String) -> Result<bool> {
+    match input.as_ref() {
+        "true" => Ok(true),
+        "false" => Ok(false),
+        _ => Err(anyhow::anyhow!("error: invalid boolean: {}", input)),
     }
 }
 
@@ -30,7 +29,10 @@ fn extract_options(options: &mut HashMap<String, String>) -> Result<Style> {
         Some(s) => match s.as_ref() {
             "default" => Ok(Style::Default),
             "short" => {
-                let underline_repo = parse_boolean(options.remove("underline_repo"))?;
+                let underline_repo = match options.remove("underline_repo") {
+                    Some(s) => parse_boolean(s)?,
+                    None => false,
+                };
                 Ok(Style::Short { underline_repo })
             }
             "long" => Ok(Style::Long),
