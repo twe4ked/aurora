@@ -41,7 +41,7 @@ Produces:
 
 ## Components
 
-- `{cwd}`, `{cwd style=short}`, `{cwd style=long}`, `{cwd style=default}`
+- `{cwd}`, `{cwd style=short underline_repo=true}`, `{cwd style=long}`, `{cwd style=default}`
 - `{git_branch}`
 - `{git_commit}`
 - `{git_stash}`
