@@ -46,6 +46,7 @@ dependencies = [
  "clap 3.0.0-beta.1 (git+https://github.com/clap-rs/clap)",
  "crossterm 0.17.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "dirs 2.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "gethostname 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "git2 0.13.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "nom 5.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "once_cell 1.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -198,6 +199,15 @@ dependencies = [
 name = "fuchsia-zircon-sys"
 version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "gethostname"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "libc 0.2.69 (registry+https://github.com/rust-lang/crates.io-index)",
+ "winapi 0.3.8 (registry+https://github.com/rust-lang/crates.io-index)",
+]
 
 [[package]]
 name = "getrandom"
@@ -783,6 +793,7 @@ dependencies = [
 "checksum dirs-sys 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)" = "afa0b23de8fd801745c471deffa6e12d248f962c9fd4b4c33787b055599bde7b"
 "checksum fuchsia-zircon 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)" = "2e9763c69ebaae630ba35f74888db465e49e259ba1bc0eda7d06f4a067615d82"
 "checksum fuchsia-zircon-sys 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)" = "3dcaa9ae7725d12cdb85b3ad99a434db70b468c09ded17e012d86b5c1010f7a7"
+"checksum gethostname 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)" = "e692e296bfac1d2533ef168d0b60ff5897b8b70a4009276834014dd8924cc028"
 "checksum getrandom 0.1.14 (registry+https://github.com/rust-lang/crates.io-index)" = "7abc8dd8451921606d809ba32e95b6111925cd2906060d2dcc29c070220503eb"
 "checksum git2 0.13.5 (registry+https://github.com/rust-lang/crates.io-index)" = "e1e02a51cd90229028c9bd8be0a0364f85b6b3199cccaa0ef39005ddbd5ac165"
 "checksum heck 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)" = "20564e78d53d2bb135c343b3f47714a56af2061f1c928fdb541dc7b9fdd94205"

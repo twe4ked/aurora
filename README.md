@@ -45,6 +45,7 @@ Produces:
 - `{git_branch}`
 - `{git_commit}`
 - `{git_stash}`
+- `{hostname}`
 - `{jobs}`
 
 ## Colors

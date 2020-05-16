@@ -73,6 +73,7 @@ pub enum Component {
     GitCommit,
     GitStash,
     GitStatus,
+    Hostname,
     Jobs,
 }
 
@@ -86,6 +87,7 @@ impl TryFrom<&str> for Component {
             "git_commit" => Ok(Component::GitCommit),
             "git_stash" => Ok(Component::GitStash),
             "git_status" => Ok(Component::GitStatus),
+            "hostname" => Ok(Component::Hostname),
             "jobs" => Ok(Component::Jobs),
             _ => Err(()),
         }

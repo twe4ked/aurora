@@ -11,6 +11,7 @@ pub mod git_branch;
 pub mod git_commit;
 pub mod git_stash;
 pub mod git_status;
+pub mod hostname;
 pub mod jobs;
 pub mod style;
 
@@ -52,6 +53,7 @@ pub fn components_from_tokens(
                     token::Component::GitCommit => git_commit::display(&context),
                     token::Component::GitStash => git_stash::display(&mut context),
                     token::Component::GitStatus => git_status::display(&context)?,
+                    token::Component::Hostname => hostname::display(),
                     token::Component::Jobs => jobs::display(jobs),
                     token::Component::Cwd => cwd::display(&context, options.remove("style")),
                 };
