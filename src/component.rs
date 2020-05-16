@@ -411,7 +411,10 @@ mod tests {
             0,
         );
 
-        assert_eq!(result.unwrap_err().to_string(), "invalid options");
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            "error: invalid options: foo=bar"
+        );
     }
 
     #[test]

@@ -85,6 +85,11 @@ Conditionals can be used to show and hide components and colors.
 - Simple configuration
 - Default fonts
 
+## Adding a new component
+
+Begin by adding a new variant to the `Component` enum in `token` and update the
+`TryFrom<&str> for Component` impl. From there follow the compiler errors!
+
 ## Inspiration
 
 - [starship/starship](https://github.com/starship/starship)
