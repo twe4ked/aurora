@@ -45,6 +45,7 @@ Produces:
 - `{git_branch}`
 - `{git_commit}`
 - `{git_stash}`
+- `{git_status}`
 - `{hostname}`
 - `{jobs}`
 - `{user}`
