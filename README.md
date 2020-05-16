@@ -71,7 +71,11 @@ everything between a color and a `{reset}`.
 Conditionals can be used to show and hide components and colors.
 
 ```
+# Last command status returns "true" if the last command returned 0
 {if last_command_status}{cyan}${else}{red}${end}{reset}
+
+# Environment variables
+{user}{if $SSH_CONNECTION}@{hostname}{end}
 ```
 
 ## Design Goals

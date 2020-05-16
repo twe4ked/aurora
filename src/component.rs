@@ -73,6 +73,7 @@ pub fn components_from_tokens(
             } => {
                 let result = match condition {
                     Condition::LastCommandStatus => status == 0,
+                    Condition::EnvironmentVariable(var_name) => std::env::var(var_name).is_ok(),
                 };
                 if result {
                     components.append(&mut components_from_tokens(

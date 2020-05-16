@@ -2,7 +2,7 @@ use crate::token::{Component, Condition, StyleToken, Token};
 use anyhow::Result;
 use nom::branch::alt;
 use nom::bytes::complete::tag;
-use nom::character::complete::{alpha1, multispace0, none_of};
+use nom::character::complete::{alpha1, multispace0, none_of, one_of};
 use nom::combinator::{all_consuming, map, map_res, opt, recognize, verify};
 use nom::error::{convert_error, VerboseError};
 use nom::multi::{many0, many1};
@@ -59,11 +59,21 @@ fn if_start(input: &str) -> IResult<&str, ()> {
     map(pair(start_tag, tag("if")), drop)(input)
 }
 
-fn if_condition(input: &str) -> IResult<&str, Condition> {
-    terminated(
-        preceded(multispace0, map_res(identifier, Condition::try_from)),
-        end_tag,
+fn environment_variable_name(input: &str) -> IResult<&str, &str> {
+    preceded(
+        tag("$"),
+        recognize(many1(one_of("ABCDEFGHIJKLMNOPQRSTUVWXYZ_"))),
     )(input)
+}
+
+fn if_condition(input: &str) -> IResult<&str, Condition> {
+    let basic_condition = map_res(identifier, Condition::try_from);
+    let environment_variable = map(environment_variable_name, |var_name: &str| {
+        Condition::EnvironmentVariable(var_name.to_owned())
+    });
+    let condition = alt((basic_condition, environment_variable));
+
+    terminated(preceded(multispace0, condition), end_tag)(input)
 }
 
 fn end(input: &str) -> IResult<&str, ()> {
@@ -343,5 +353,14 @@ mod tests {
             parse(&"{  green  }").unwrap(),
             vec![Token::Style(StyleToken::Green)]
         );
+    }
+
+    #[test]
+    fn it_parses_environment_variable_names() {
+        let subject = environment_variable_name;
+
+        assert_eq!(subject(&"$TEST").unwrap(), ("", "TEST"));
+        assert_eq!(subject(&"$FOO_BAR").unwrap(), ("", "FOO_BAR"));
+        assert_eq!(subject(&"$FOO BAR").unwrap(), (" BAR", "FOO"));
     }
 }

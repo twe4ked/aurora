@@ -53,6 +53,7 @@ impl TryFrom<&str> for StyleToken {
 #[derive(Debug, PartialEq)]
 pub enum Condition {
     LastCommandStatus,
+    EnvironmentVariable(String),
 }
 
 impl TryFrom<&str> for Condition {
