@@ -11,20 +11,20 @@ use std::convert::TryFrom;
 use std::path::{Path, PathBuf};
 
 #[derive(Debug, PartialEq)]
-enum CwdStyle {
+enum Style {
     Default,
     Long,
     Short,
 }
 
-impl TryFrom<String> for CwdStyle {
+impl TryFrom<String> for Style {
     type Error = anyhow::Error;
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
         match value.as_ref() {
-            "default" => Ok(CwdStyle::Default),
-            "short" => Ok(CwdStyle::Short),
-            "long" => Ok(CwdStyle::Long),
+            "default" => Ok(Style::Default),
+            "short" => Ok(Style::Short),
+            "long" => Ok(Style::Long),
             _ => Err(anyhow::anyhow!("error: invalid style: {}", value)),
         }
     }
@@ -40,15 +40,15 @@ fn parse_boolean(input: Option<String>) -> Result<bool> {
 }
 
 struct Options {
-    style: CwdStyle,
+    style: Style,
     underline_repo: bool,
 }
 
 impl Options {
     fn extract(options: &mut HashMap<String, String>) -> Result<Self> {
         let style = match options.remove("style") {
-            Some(s) => CwdStyle::try_from(s)?,
-            None => CwdStyle::Default,
+            Some(s) => Style::try_from(s)?,
+            None => Style::Default,
         };
         let underline_repo = parse_boolean(options.remove("underline_repo"))?;
 
@@ -67,15 +67,15 @@ pub fn display(
     let options = Options::extract(&mut options)?;
 
     let output = match options.style {
-        CwdStyle::Default => default(context.current_dir()),
-        CwdStyle::Short => short(
+        Style::Default => default(context.current_dir()),
+        Style::Short => short(
             &context.current_dir(),
             &dirs::home_dir().unwrap_or_default(),
             context.git_repository().map(|r| r.path()),
             options.underline_repo,
             shell,
         ),
-        CwdStyle::Long => long(context.current_dir()),
+        Style::Long => long(context.current_dir()),
     };
 
     Ok(Some(Component::Computed(output)))
