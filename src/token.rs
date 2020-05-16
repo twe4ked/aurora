@@ -75,6 +75,7 @@ pub enum Component {
     GitStatus,
     Hostname,
     Jobs,
+    User,
 }
 
 impl TryFrom<&str> for Component {
@@ -89,6 +90,7 @@ impl TryFrom<&str> for Component {
             "git_status" => Ok(Component::GitStatus),
             "hostname" => Ok(Component::Hostname),
             "jobs" => Ok(Component::Jobs),
+            "user" => Ok(Component::User),
             _ => Err(()),
         }
     }

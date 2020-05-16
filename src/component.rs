@@ -14,6 +14,7 @@ pub mod git_status;
 pub mod hostname;
 pub mod jobs;
 pub mod style;
+pub mod user;
 
 #[derive(Debug, PartialEq)]
 pub enum Component {
@@ -56,6 +57,7 @@ pub fn components_from_tokens(
                     token::Component::Hostname => hostname::display(),
                     token::Component::Jobs => jobs::display(jobs),
                     token::Component::Cwd => cwd::display(&context, options.remove("style")),
+                    token::Component::User => user::display(),
                 };
 
                 if !options.is_empty() {

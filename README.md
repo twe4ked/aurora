@@ -47,6 +47,7 @@ Produces:
 - `{git_stash}`
 - `{hostname}`
 - `{jobs}`
+- `{user}`
 
 ## Colors
 
