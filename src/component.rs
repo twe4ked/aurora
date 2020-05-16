@@ -56,7 +56,7 @@ pub fn components_from_tokens(
                     token::Component::GitStatus => git_status::display(&context)?,
                     token::Component::Hostname => hostname::display(),
                     token::Component::Jobs => jobs::display(jobs),
-                    token::Component::Cwd => cwd::display(&context, options.remove("style")),
+                    token::Component::Cwd => cwd::display(&context, options.remove("style"))?,
                     token::Component::User => user::display(),
                 };
 

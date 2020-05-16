@@ -1,6 +1,10 @@
 use crate::component::Component;
 use crate::error::Error;
 use crate::Context;
+
+use anyhow::Result;
+
+use std::convert::TryFrom;
 use std::path::{Path, PathBuf};
 
 #[derive(Debug, PartialEq)]
@@ -10,22 +14,29 @@ pub enum CwdStyle {
     Short,
 }
 
-pub fn display(context: &Context, style: Option<String>) -> Option<Component> {
-    let style = if let Some(value) = style {
+impl TryFrom<String> for CwdStyle {
+    type Error = anyhow::Error;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
         match value.as_ref() {
-            "default" => CwdStyle::Default,
-            "short" => CwdStyle::Short,
-            "long" => CwdStyle::Long,
-            _ => panic!("invalid style"),
+            "default" => Ok(CwdStyle::Default),
+            "short" => Ok(CwdStyle::Short),
+            "long" => Ok(CwdStyle::Long),
+            _ => Err(anyhow::anyhow!("error: invalid style: {}", value)),
         }
-    } else {
-        CwdStyle::Default
+    }
+}
+
+pub fn display(context: &Context, style: Option<String>) -> Result<Option<Component>> {
+    let style = match style {
+        Some(s) => CwdStyle::try_from(s)?,
+        None => CwdStyle::Default,
     };
 
     let current_dir = context.current_dir();
-    Some(Component::Computed(
+    Ok(Some(Component::Computed(
         cwd(&context, &style, &current_dir).unwrap_or_else(|_| long(&current_dir).unwrap()),
-    ))
+    )))
 }
 
 fn cwd(context: &Context, style: &CwdStyle, current_dir: &PathBuf) -> Result<String, Error> {
