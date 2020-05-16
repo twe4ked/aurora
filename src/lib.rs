@@ -2,6 +2,7 @@ mod component;
 mod error;
 mod parser;
 mod token;
+mod utility;
 
 use anyhow::{Context as AnyhowContext, Result};
 use git2::Repository;

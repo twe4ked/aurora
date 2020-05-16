@@ -1,8 +1,11 @@
 use crate::component::Component;
 use crate::error::Error;
+use crate::utility::wrap_no_change_cursor_position;
 use crate::Context;
+use crate::Shell;
 
 use anyhow::Result;
+use crossterm::style::Attribute;
 
 use std::collections::HashMap;
 use std::convert::TryFrom;
@@ -28,8 +31,18 @@ impl TryFrom<String> for CwdStyle {
     }
 }
 
+fn parse_boolean(input: Option<String>) -> Result<bool> {
+    match input.as_ref().map(|s| &s[..]) {
+        Some("true") => Ok(true),
+        Some("false") => Ok(false),
+        Some(s) => Err(anyhow::anyhow!("error: invalid boolean: {}", s)),
+        None => Ok(false),
+    }
+}
+
 struct Options {
     style: CwdStyle,
+    underline_repo: bool,
 }
 
 impl Options {
@@ -38,35 +51,53 @@ impl Options {
             Some(s) => CwdStyle::try_from(s)?,
             None => CwdStyle::Default,
         };
-        Ok(Self { style })
+        let underline_repo = parse_boolean(options.remove("underline_repo"))?;
+
+        Ok(Self {
+            style,
+            underline_repo,
+        })
     }
 }
 
 pub fn display(
     context: &Context,
     mut options: &mut HashMap<String, String>,
+    shell: &Shell,
 ) -> Result<Option<Component>> {
     let options = Options::extract(&mut options)?;
 
     let current_dir = context.current_dir();
     Ok(Some(Component::Computed(
-        cwd(&context, &options.style, &current_dir).unwrap_or_else(|_| long(&current_dir).unwrap()),
+        cwd(&context, &options, &current_dir, shell)
+            .unwrap_or_else(|_| long(&current_dir).unwrap()),
     )))
 }
 
-fn cwd(context: &Context, style: &CwdStyle, current_dir: &PathBuf) -> Result<String, Error> {
-    match style {
+fn cwd(
+    context: &Context,
+    options: &Options,
+    current_dir: &PathBuf,
+    shell: &Shell,
+) -> Result<String, Error> {
+    match options.style {
         CwdStyle::Default => {
             let home_dir = dirs::home_dir().unwrap_or_default();
             Ok(replace_home_dir(current_dir, &home_dir))
         }
         CwdStyle::Short => {
             let home_dir = dirs::home_dir().unwrap_or_default();
-            let repository = match context.git_repository() {
+            let git_path = match context.git_repository() {
                 Some(r) => Some(r.path()),
                 None => None,
             };
-            short(&current_dir, &home_dir, repository)
+            short(
+                &current_dir,
+                &home_dir,
+                git_path,
+                options.underline_repo,
+                shell,
+            )
         }
         CwdStyle::Long => long(current_dir),
     }
@@ -81,17 +112,14 @@ fn short(
     full_path: &PathBuf,
     home_dir: &PathBuf,
     git_path: Option<&Path>,
+    underline_repo: bool,
+    shell: &Shell,
 ) -> Result<String, Error> {
-    let git_path_length = {
-        match git_path {
-            Some(git_path) => {
-                let git_path = git_path.parent().unwrap(); // Remove ".git"
-                let git_path = replace_home_dir(&git_path.to_path_buf(), &home_dir);
-                git_path.split('/').count()
-            }
-            None => 1,
-        }
-    };
+    let git_path_length = git_path.map(|git_path| {
+        let git_path = git_path.parent().unwrap(); // Remove ".git"
+        let git_path = replace_home_dir(&git_path.to_path_buf(), &home_dir);
+        git_path.split('/').count()
+    });
 
     let full_path = replace_home_dir(&full_path, &home_dir);
     let full_path_length = full_path.split('/').count();
@@ -100,9 +128,20 @@ fn short(
         .split('/')
         .enumerate()
         .map(|(i, part)| {
-            if i == git_path_length - 1 || i == full_path_length - 1 {
+            if git_path_length.map(|l| i == l - 1).unwrap_or(false) {
                 // Don't truncate the repository or the final dir
-                part.to_string()
+                if underline_repo {
+                    format!(
+                        "{}{}{}",
+                        wrap_no_change_cursor_position(Attribute::Underlined, shell),
+                        part,
+                        wrap_no_change_cursor_position(Attribute::NoUnderline, shell)
+                    )
+                } else {
+                    part.to_owned()
+                }
+            } else if i == full_path_length - 1 {
+                part.to_owned()
             } else {
                 let p = part.get(0..1).unwrap_or("");
                 if p == "." {
@@ -150,13 +189,13 @@ mod tests {
         let git_root = Path::new("/home/foo/axx/bxx/repo/.git");
 
         assert_eq!(
-            short(&current_dir, &home_dir, Some(&git_root)).unwrap(),
+            short(&current_dir, &home_dir, Some(&git_root), false, &Shell::Zsh).unwrap(),
             "~/a/b/repo/c/dxx".to_string()
         );
 
         let current_dir = PathBuf::from("/home/foo/axx/bxx/repo");
         assert_eq!(
-            short(&current_dir, &home_dir, Some(&git_root)).unwrap(),
+            short(&current_dir, &home_dir, Some(&git_root), false, &Shell::Zsh).unwrap(),
             "~/a/b/repo".to_string()
         );
     }
@@ -168,7 +207,7 @@ mod tests {
         let git_root = Path::new("/home/foo/axx/.git");
 
         assert_eq!(
-            short(&current_dir, &home_dir, Some(&git_root)).unwrap(),
+            short(&current_dir, &home_dir, Some(&git_root), false, &Shell::Zsh).unwrap(),
             "~/axx".to_string()
         );
     }
@@ -180,7 +219,7 @@ mod tests {
         let git_root = Path::new("/foo/bar/axx/.git");
 
         assert_eq!(
-            short(&current_dir, &home_dir, Some(&git_root)).unwrap(),
+            short(&current_dir, &home_dir, Some(&git_root), false, &Shell::Zsh).unwrap(),
             "/f/b/axx/b/c/dxx".to_string()
         );
     }
@@ -191,7 +230,7 @@ mod tests {
         let home_dir = PathBuf::from("/home/baz");
 
         assert_eq!(
-            short(&current_dir, &home_dir, None).unwrap(),
+            short(&current_dir, &home_dir, None, false, &Shell::Zsh).unwrap(),
             "/f/b/a/b/c/dxx".to_string()
         );
     }
@@ -202,7 +241,7 @@ mod tests {
         let home_dir = PathBuf::from("/home/baz");
 
         assert_eq!(
-            short(&current_dir, &home_dir, None).unwrap(),
+            short(&current_dir, &home_dir, None, false, &Shell::Zsh).unwrap(),
             "/.a/./../.dxx".to_string()
         );
     }

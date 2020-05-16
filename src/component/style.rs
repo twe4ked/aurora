@@ -1,8 +1,8 @@
 use crate::component::Component;
 use crate::token::StyleToken;
+use crate::utility::wrap_no_change_cursor_position;
 use crate::Shell;
 use crossterm::style::{Color as CrosstermColor, ResetColor, SetForegroundColor};
-use std::fmt::Display;
 
 impl std::convert::From<&StyleToken> for CrosstermColor {
     fn from(style_token: &StyleToken) -> Self {
@@ -40,17 +40,6 @@ pub fn display(style_token: &StyleToken, shell: &Shell) -> Option<Component> {
         SetForegroundColor(crossterm_color),
         shell,
     )))
-}
-
-// Include a string as a literal escape sequence. The string within the braces should not change
-// the cursor position. Brace pairs can nest.
-fn wrap_no_change_cursor_position<T: Display>(color: T, shell: &Shell) -> String {
-    match shell {
-        // %{...%}
-        Shell::Zsh => format!("%{{{}%}}", color),
-        // /[.../]
-        Shell::Bash => format!("\\[{}\\]", color),
-    }
 }
 
 #[cfg(test)]

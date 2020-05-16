@@ -112,7 +112,7 @@ fn conditional(input: &str) -> IResult<&str, Token> {
 }
 
 fn key(input: &str) -> IResult<&str, &str> {
-    preceded(multispace0, alpha1)(input)
+    preceded(multispace0, alpha_underscore)(input)
 }
 
 fn value(input: &str) -> IResult<&str, &str> {
@@ -131,10 +131,12 @@ fn underscore(input: &str) -> IResult<&str, &str> {
     tag("_")(input)
 }
 
+fn alpha_underscore(input: &str) -> IResult<&str, &str> {
+    recognize(many1(alt((alpha1, underscore))))(input)
+}
+
 fn identifier(input: &str) -> IResult<&str, &str> {
-    verify(recognize(many1(alt((alpha1, underscore)))), |s: &str| {
-        !RESERVED_KEYWORDS.contains(s)
-    })(input)
+    verify(alpha_underscore, |s: &str| !RESERVED_KEYWORDS.contains(s))(input)
 }
 
 fn component(input: &str) -> IResult<&str, Token> {
