@@ -7,27 +7,13 @@ use anyhow::Result;
 use crossterm::style::Attribute;
 
 use std::collections::HashMap;
-use std::convert::TryFrom;
 use std::path::{Path, PathBuf};
 
 #[derive(Debug, PartialEq)]
 enum Style {
     Default,
     Long,
-    Short,
-}
-
-impl TryFrom<String> for Style {
-    type Error = anyhow::Error;
-
-    fn try_from(value: String) -> Result<Self, Self::Error> {
-        match value.as_ref() {
-            "default" => Ok(Style::Default),
-            "short" => Ok(Style::Short),
-            "long" => Ok(Style::Long),
-            _ => Err(anyhow::anyhow!("error: invalid style: {}", value)),
-        }
-    }
+    Short { underline_repo: bool },
 }
 
 fn parse_boolean(input: Option<String>) -> Result<bool> {
@@ -39,23 +25,18 @@ fn parse_boolean(input: Option<String>) -> Result<bool> {
     }
 }
 
-struct Options {
-    style: Style,
-    underline_repo: bool,
-}
-
-impl Options {
-    fn extract(options: &mut HashMap<String, String>) -> Result<Self> {
-        let style = match options.remove("style") {
-            Some(s) => Style::try_from(s)?,
-            None => Style::Default,
-        };
-        let underline_repo = parse_boolean(options.remove("underline_repo"))?;
-
-        Ok(Self {
-            style,
-            underline_repo,
-        })
+fn extract_options(options: &mut HashMap<String, String>) -> Result<Style> {
+    match options.remove("style") {
+        Some(s) => match s.as_ref() {
+            "default" => Ok(Style::Default),
+            "short" => {
+                let underline_repo = parse_boolean(options.remove("underline_repo"))?;
+                Ok(Style::Short { underline_repo })
+            }
+            "long" => Ok(Style::Long),
+            _ => Err(anyhow::anyhow!("error: invalid style: {}", s)),
+        },
+        None => Ok(Style::Default),
     }
 }
 
@@ -64,15 +45,15 @@ pub fn display(
     mut options: &mut HashMap<String, String>,
     shell: &Shell,
 ) -> Result<Option<Component>> {
-    let options = Options::extract(&mut options)?;
+    let style = extract_options(&mut options)?;
 
-    let output = match options.style {
+    let output = match style {
         Style::Default => default(context.current_dir()),
-        Style::Short => short(
+        Style::Short { underline_repo } => short(
             &context.current_dir(),
             &dirs::home_dir().unwrap_or_default(),
             context.git_repository().map(|r| r.path()),
-            options.underline_repo,
+            underline_repo,
             shell,
         ),
         Style::Long => long(context.current_dir()),
