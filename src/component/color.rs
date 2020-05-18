@@ -32,17 +32,15 @@ mod tests {
     use super::*;
 
     #[test]
-    fn display_green() {
-        if let Some(Component::Color(green)) = display(&Color::Green, &Shell::Zsh) {
-            assert_eq!(format!("{}", green), "%{\u{1b}[38;5;10m%}".to_string());
-        } else {
-            unreachable!();
-        }
+    fn it_wraps_green() {
+        assert_green(Shell::Zsh, "%{\u{1b}[38;5;10m%}");
+        assert_green(Shell::Bash, "\\[\u{1b}[38;5;10m\\]");
+    }
 
-        if let Some(Component::Color(green)) = display(&Color::Green, &Shell::Bash) {
-            assert_eq!(format!("{}", green), "\\[\u{1b}[38;5;10m\\]".to_string());
-        } else {
-            unreachable!();
+    fn assert_green(shell: Shell, expected: &str) {
+        match display(&Color::Green, &shell) {
+            Some(Component::Color(green)) => assert_eq!(format!("{}", green), expected.to_string()),
+            _ => unreachable!(),
         }
     }
 }
