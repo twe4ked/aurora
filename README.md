@@ -64,6 +64,9 @@ everything between a color and a `{reset}`.
 - `{magenta}`, `{dark_magenta}`
 - `{yellow}`, `{dark_yellow}`
 - `{white}`
+
+### Reset
+
 - `{reset}`
 
 ## Conditionals
