@@ -190,13 +190,17 @@ fn filter(group: &mut Vec<Option<Component>>) {
     //  ^   ^
     //  |   ` Static
     //  ` Color
-    let group_contains_something_other_than_static_or_style = !group.iter().all(|c| match c {
+    let group_contains_only_static_or_color_or_color_reset = group.iter().all(|c| match c {
         // Check for Color, ColorReset, or Static
         Some(Component::Static(_)) | Some(Component::Color(_)) | Some(Component::ColorReset(_)) => {
             true
         }
         _ => false,
     });
+
+    if group_contains_only_static_or_color_or_color_reset {
+        return;
+    }
 
     // However, if the group also contains a None value, we want to run the filter.
     //
@@ -210,12 +214,12 @@ fn filter(group: &mut Vec<Option<Component>>) {
             false
         }
         // Everything else is a "value"
-        Some(_) => true,
+        Some(Component::Computed(_)) => true,
         // Except None
         None => false,
     });
 
-    if group_contains_something_other_than_static_or_style && group_contains_no_value {
+    if group_contains_no_value {
         group.clear();
     }
 }
