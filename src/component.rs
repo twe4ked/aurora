@@ -216,15 +216,7 @@ fn filter(group: &mut Vec<Option<Component>>) {
     });
 
     if group_contains_something_other_than_static_or_style && group_contains_no_value {
-        // Retain everything that isn't a Static or a None
-        group.retain(|c| match c {
-            // Remove Static
-            Some(Component::Static(_)) => false,
-            // Remove None
-            None => false,
-            // Keep everything else
-            _ => true,
-        });
+        group.clear();
     }
 }
 
@@ -256,10 +248,10 @@ mod tests {
             Component::Static("a keep".to_string()),
             Component::Computed("b keep".to_string()),
             // Group 2 (Squash)
-            Component::Color("red".to_string()),
+            // XXX: Component::Color("red".to_string()),
             // XXX: None,
             // XXX: Component::Static("c squash".to_string()),
-            Component::ColorReset("reset".to_string()),
+            // XXX: Component::ColorReset("reset".to_string()),
             // Group 3
             Component::Color("green".to_string()),
             Component::Static("d keep".to_string()),
@@ -287,7 +279,7 @@ mod tests {
             Component::Static("a keep".to_string()),
             Component::Computed("b keep".to_string()),
             // Group 2
-            Component::Color("blue".to_string()),
+            // XXX: Component::Color("blue".to_string()),
             // XXX: Some(Component::Static("c squash".to_string())),
             // XXX: None,
         ];
@@ -363,7 +355,7 @@ mod tests {
     }
 
     #[test]
-    fn test_filter_static_and_empty_ignores_color() {
+    fn test_filter_static_and_empty_removes_colors() {
         let mut group = vec![
             Some(Component::Color("green".to_string())),
             Some(Component::Static("a keep".to_string())),
@@ -371,13 +363,7 @@ mod tests {
             Some(Component::ColorReset("reset".to_string())),
         ];
         filter(&mut group);
-        assert_eq!(
-            group,
-            vec![
-                Some(Component::Color("green".to_string())),
-                Some(Component::ColorReset("reset".to_string())),
-            ]
-        );
+        assert_eq!(group, vec![]);
     }
 
     #[test]
