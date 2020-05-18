@@ -20,7 +20,6 @@ pub enum StyleToken {
     Yellow,
     DarkYellow,
     White,
-    Reset,
 }
 
 impl TryFrom<&str> for StyleToken {
@@ -44,7 +43,6 @@ impl TryFrom<&str> for StyleToken {
             "yellow" => Ok(Yellow),
             "dark_yellow" => Ok(DarkYellow),
             "white" => Ok(White),
-            "reset" => Ok(Reset),
             _ => Err(()),
         }
     }
@@ -104,7 +102,9 @@ pub enum Token {
         options: HashMap<String, String>,
     },
     Static(String),
+    // TODO: Rename Color(Color),
     Style(StyleToken),
+    Reset,
     Conditional {
         condition: Condition,
         left: Vec<Token>,

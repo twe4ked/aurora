@@ -1,8 +1,8 @@
 use crate::component::Component;
 use crate::token::StyleToken;
-use crate::utility::wrap_no_change_cursor_position;
+use crate::utility::wrap_no_change_cursor_position as wrap;
 use crate::Shell;
-use crossterm::style::{Color as CrosstermColor, ResetColor, SetForegroundColor};
+use crossterm::style::{Color as CrosstermColor, SetForegroundColor};
 
 impl std::convert::From<&StyleToken> for CrosstermColor {
     fn from(style_token: &StyleToken) -> Self {
@@ -22,22 +22,13 @@ impl std::convert::From<&StyleToken> for CrosstermColor {
             StyleToken::Yellow => CrosstermColor::Yellow,
             StyleToken::DarkYellow => CrosstermColor::DarkYellow,
             StyleToken::White => CrosstermColor::White,
-            StyleToken::Reset => unreachable!(),
         }
     }
 }
 
 pub fn display(style_token: &StyleToken, shell: &Shell) -> Option<Component> {
-    if style_token == &StyleToken::Reset {
-        return Some(Component::ColorReset(wrap_no_change_cursor_position(
-            ResetColor, shell,
-        )));
-    }
-
-    let crossterm_color = CrosstermColor::from(style_token);
-
-    Some(Component::Color(wrap_no_change_cursor_position(
-        SetForegroundColor(crossterm_color),
+    Some(Component::Color(wrap(
+        SetForegroundColor(CrosstermColor::from(style_token)),
         shell,
     )))
 }

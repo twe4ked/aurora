@@ -55,6 +55,11 @@ fn style(input: &str) -> IResult<&str, Token> {
     map(style_token, Token::Style)(input)
 }
 
+fn reset(input: &str) -> IResult<&str, Token> {
+    let reset = terminated(preceded(start_tag, tag("reset")), end_tag);
+    map(reset, |_| Token::Reset)(input)
+}
+
 fn if_start(input: &str) -> IResult<&str, ()> {
     map(pair(start_tag, tag("if")), drop)(input)
 }
@@ -156,7 +161,13 @@ fn component(input: &str) -> IResult<&str, Token> {
 }
 
 fn tokens(input: &str) -> IResult<&str, Vec<Token>> {
-    many1(alt((static_component, style, conditional, component)))(input)
+    many1(alt((
+        static_component,
+        style,
+        reset,
+        conditional,
+        component,
+    )))(input)
 }
 
 pub fn parse(input: &str) -> Result<Vec<Token>> {

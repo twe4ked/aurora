@@ -13,6 +13,7 @@ pub mod git_stash;
 pub mod git_status;
 pub mod hostname;
 pub mod jobs;
+pub mod reset;
 pub mod style;
 pub mod user;
 
@@ -48,6 +49,7 @@ pub fn components_from_tokens(
         match token {
             Token::Static(s) => components.push(Some(Component::Static(s.to_string()))),
             Token::Style(style) => components.push(style::display(&style, &shell)),
+            Token::Reset => components.push(reset::display(&shell)),
             Token::Component { name, mut options } => {
                 let c = match name {
                     token::Component::GitBranch => git_branch::display(&context),
