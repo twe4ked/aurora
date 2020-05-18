@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::convert::TryFrom;
 
 #[derive(Debug, PartialEq)]
-pub enum StyleToken {
+pub enum Color {
     Black,
     DarkGrey,
     Blue,
@@ -22,11 +22,11 @@ pub enum StyleToken {
     White,
 }
 
-impl TryFrom<&str> for StyleToken {
+impl TryFrom<&str> for Color {
     type Error = ();
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
-        use StyleToken::*;
+        use Color::*;
         match value {
             "black" => Ok(Black),
             "dark_grey" => Ok(DarkGrey),
@@ -102,8 +102,7 @@ pub enum Token {
         options: HashMap<String, String>,
     },
     Static(String),
-    // TODO: Rename Color(Color),
-    Style(StyleToken),
+    Color(Color),
     Reset,
     Conditional {
         condition: Condition,

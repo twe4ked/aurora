@@ -6,6 +6,7 @@ use std::fmt;
 use crate::token::{self, Condition, Token};
 use crate::{Context, Shell};
 
+pub mod color;
 pub mod cwd;
 pub mod git_branch;
 pub mod git_commit;
@@ -14,7 +15,6 @@ pub mod git_status;
 pub mod hostname;
 pub mod jobs;
 pub mod reset;
-pub mod style;
 pub mod user;
 
 #[derive(Debug, PartialEq)]
@@ -48,7 +48,7 @@ pub fn components_from_tokens(
     for token in tokens.into_iter() {
         match token {
             Token::Static(s) => components.push(Some(Component::Static(s.to_string()))),
-            Token::Style(style) => components.push(style::display(&style, &shell)),
+            Token::Color(color) => components.push(color::display(&color, &shell)),
             Token::Reset => components.push(reset::display(&shell)),
             Token::Component { name, mut options } => {
                 let c = match name {

@@ -1,4 +1,4 @@
-use crate::token::{Component, Condition, StyleToken, Token};
+use crate::token::{Color, Component, Condition, Token};
 use anyhow::Result;
 use nom::branch::alt;
 use nom::bytes::complete::tag;
@@ -47,12 +47,12 @@ fn start_identifier_end(input: &str) -> IResult<&str, &str> {
     terminated(preceded(start_tag, identifier), end_tag)(input)
 }
 
-fn style_token(input: &str) -> IResult<&str, StyleToken> {
-    map_res(start_identifier_end, StyleToken::try_from)(input)
+fn color_internal(input: &str) -> IResult<&str, Color> {
+    map_res(start_identifier_end, Color::try_from)(input)
 }
 
-fn style(input: &str) -> IResult<&str, Token> {
-    map(style_token, Token::Style)(input)
+fn color(input: &str) -> IResult<&str, Token> {
+    map(color_internal, Token::Color)(input)
 }
 
 fn reset(input: &str) -> IResult<&str, Token> {
@@ -163,7 +163,7 @@ fn component(input: &str) -> IResult<&str, Token> {
 fn tokens(input: &str) -> IResult<&str, Vec<Token>> {
     many1(alt((
         static_component,
-        style,
+        color,
         reset,
         conditional,
         component,
@@ -354,17 +354,14 @@ mod tests {
 
     #[test]
     fn it_parses_style_components() {
-        assert_eq!(
-            parse(&"{green}").unwrap(),
-            vec![Token::Style(StyleToken::Green)]
-        );
+        assert_eq!(parse(&"{green}").unwrap(), vec![Token::Color(Color::Green)]);
     }
 
     #[test]
     fn it_parses_style_with_whitespace() {
         assert_eq!(
             parse(&"{  green  }").unwrap(),
-            vec![Token::Style(StyleToken::Green)]
+            vec![Token::Color(Color::Green)]
         );
     }
 
