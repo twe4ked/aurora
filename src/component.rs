@@ -172,18 +172,16 @@ fn into_groups(components: Vec<Option<Component>>) -> Vec<Vec<Option<Component>>
 }
 
 pub fn squash(components: Vec<Option<Component>>) -> Vec<Component> {
-    let mut groups = into_groups(components);
-
-    let mut components = Vec::new();
-    for mut group in groups.iter_mut() {
-        filter(&mut group);
-        components.append(&mut group.drain(0..).filter_map(|c| c).collect());
-    }
-
-    components
+    into_groups(components)
+        .into_iter()
+        .filter(|g| !filter(&g))
+        .flatten()
+        .filter_map(|c| c)
+        .collect()
 }
 
-fn filter(group: &mut Vec<Option<Component>>) {
+// TODO: Rename should_keep_group
+fn filter(group: &Vec<Option<Component>>) -> bool {
     // Groups with just a Static and or Color/ColorReset should be kept:
     //
     // {red}>{reset}
@@ -199,7 +197,7 @@ fn filter(group: &mut Vec<Option<Component>>) {
     });
 
     if group_contains_only_static_or_color_or_color_reset {
-        return;
+        return false;
     }
 
     // However, if the group also contains a None value, we want to run the filter.
@@ -219,9 +217,7 @@ fn filter(group: &mut Vec<Option<Component>>) {
         None => false,
     });
 
-    if group_contains_no_value {
-        group.clear();
-    }
+    group_contains_no_value
 }
 
 #[cfg(test)]
@@ -292,104 +288,67 @@ mod tests {
 
     #[test]
     fn test_filter_just_static() {
-        let mut group = vec![Some(Component::Static("a keep".to_string()))];
-        filter(&mut group);
-        assert_eq!(group, vec![Some(Component::Static("a keep".to_string()))]);
+        let group = vec![Some(Component::Static("a keep".to_string()))];
+        assert!(!filter(&group));
     }
 
     #[test]
     fn test_filter_just_static_ignores_color() {
-        let mut group = vec![
+        let group = vec![
             Some(Component::Color("green".to_string())),
             Some(Component::Static("a keep".to_string())),
             Some(Component::ColorReset("reset".to_string())),
         ];
-        filter(&mut group);
-        assert_eq!(
-            group,
-            vec![
-                Some(Component::Color("green".to_string())),
-                Some(Component::Static("a keep".to_string())),
-                Some(Component::ColorReset("reset".to_string())),
-            ]
-        );
+        assert!(!filter(&group));
     }
 
     #[test]
     fn test_filter_static_and_cwd() {
-        let mut group = vec![
+        let group = vec![
             Some(Component::Static("a keep".to_string())),
             Some(Component::Computed("b keep".to_string())),
         ];
-        filter(&mut group);
-        assert_eq!(
-            group,
-            vec![
-                Some(Component::Static("a keep".to_string())),
-                Some(Component::Computed("b keep".to_string())),
-            ]
-        );
+        assert!(!filter(&group));
     }
 
     #[test]
     fn test_filter_static_and_cwd_ignores_color() {
-        let mut group = vec![
+        let group = vec![
             Some(Component::Color("green".to_string())),
             Some(Component::Static("a keep".to_string())),
             Some(Component::Computed("b keep".to_string())),
             Some(Component::ColorReset("reset".to_string())),
         ];
-        filter(&mut group);
-        assert_eq!(
-            group,
-            vec![
-                Some(Component::Color("green".to_string())),
-                Some(Component::Static("a keep".to_string())),
-                Some(Component::Computed("b keep".to_string())),
-                Some(Component::ColorReset("reset".to_string())),
-            ]
-        );
+        assert!(!filter(&group));
     }
 
     #[test]
     fn test_filter_static_and_empty() {
-        let mut group = vec![Some(Component::Static("a keep".to_string())), None];
-        filter(&mut group);
-        assert_eq!(group, vec![]);
+        let group = vec![Some(Component::Static("a keep".to_string())), None];
+        assert!(filter(&group));
     }
 
     #[test]
     fn test_filter_static_and_empty_removes_colors() {
-        let mut group = vec![
+        let group = vec![
             Some(Component::Color("green".to_string())),
             Some(Component::Static("a keep".to_string())),
             None,
             Some(Component::ColorReset("reset".to_string())),
         ];
-        filter(&mut group);
-        assert_eq!(group, vec![]);
+        assert!(filter(&group));
     }
 
     #[test]
     fn test_filter_static_cwd_and_empty() {
-        let mut group = vec![
+        let group = vec![
             Some(Component::Color("green".to_string())),
             Some(Component::Static("a keep".to_string())),
             Some(Component::Computed("b keep".to_string())),
             None,
             Some(Component::ColorReset("reset".to_string())),
         ];
-        filter(&mut group);
-        assert_eq!(
-            group,
-            vec![
-                Some(Component::Color("green".to_string())),
-                Some(Component::Static("a keep".to_string())),
-                Some(Component::Computed("b keep".to_string())),
-                None,
-                Some(Component::ColorReset("reset".to_string())),
-            ]
-        );
+        assert!(!filter(&group));
     }
 
     #[test]
