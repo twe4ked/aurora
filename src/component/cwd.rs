@@ -45,7 +45,6 @@ fn extract_options(options: &mut HashMap<String, String>) -> Result<Style> {
 pub fn display(
     context: &Context,
     mut options: &mut HashMap<String, String>,
-    shell: &Shell,
 ) -> Result<Option<Component>> {
     let style = extract_options(&mut options)?;
 
@@ -56,7 +55,7 @@ pub fn display(
             &dirs::home_dir().unwrap_or_default(),
             context.git_repository().map(|r| r.path()),
             underline_repo,
-            shell,
+            &context.shell,
         ),
         Style::Long => long(context.current_dir()),
     };

@@ -82,7 +82,7 @@ fn init(options: Init) -> Result<()> {
 fn run(options: Run) -> Result<()> {
     let components = aurora_prompt::components(
         &options.config,
-        &options.shell,
+        options.shell,
         options.jobs(),
         options.status,
     )?;

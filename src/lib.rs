@@ -11,13 +11,29 @@ use once_cell::sync::OnceCell;
 use std::env;
 use std::path::PathBuf;
 
-#[derive(Default)]
 pub struct Context {
     current_dir: OnceCell<PathBuf>,
     git_repository: OnceCell<Option<Repository>>,
+    last_command_status: usize,
+    backgrounded_jobs: Option<String>,
+    shell: Shell,
 }
 
 impl Context {
+    pub fn new(
+        shell: Shell,
+        last_command_status: usize,
+        backgrounded_jobs: Option<String>,
+    ) -> Self {
+        Self {
+            current_dir: OnceCell::new(),
+            git_repository: OnceCell::new(),
+            last_command_status,
+            backgrounded_jobs,
+            shell,
+        }
+    }
+
     pub fn current_dir(&self) -> &PathBuf {
         self.current_dir.get_or_init(|| {
             env::var("PWD")
@@ -42,7 +58,8 @@ impl Context {
     }
 }
 
-#[derive(Debug)]
+// TODO: Remove Copy/Clone
+#[derive(Debug, Clone, Copy)]
 pub enum Shell {
     Zsh,
     Bash,
@@ -62,15 +79,15 @@ impl std::str::FromStr for Shell {
 
 pub fn components(
     config: &str,
-    shell: &Shell,
+    shell: Shell,
     jobs: Option<String>,
     status: usize,
 ) -> Result<Vec<component::Component>> {
     let tokens = parser::parse(config)?;
 
-    let mut context = Context::default();
-    let components =
-        component::components_from_tokens(tokens, &mut context, shell, jobs.as_deref(), status)?;
+    let mut context = Context::new(shell, status, jobs);
+
+    let components = component::components_from_tokens(tokens, &mut context)?;
     let components = component::squash(components);
 
     Ok(components)

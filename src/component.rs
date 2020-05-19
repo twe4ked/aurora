@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::fmt;
 
 use crate::token::{self, Condition, Token};
-use crate::{Context, Shell};
+use crate::Context;
 
 pub mod color;
 pub mod cwd;
@@ -39,17 +39,14 @@ impl fmt::Display for Component {
 pub fn components_from_tokens(
     tokens: Vec<Token>,
     mut context: &mut Context,
-    shell: &Shell,
-    jobs: Option<&str>,
-    status: usize,
 ) -> Result<Vec<Option<Component>>> {
     let mut components = Vec::new();
 
     for token in tokens.into_iter() {
         match token {
             Token::Static(s) => components.push(Some(Component::Static(s.to_string()))),
-            Token::Color(color) => components.push(color::display(&color, &shell)),
-            Token::Reset => components.push(reset::display(&shell)),
+            Token::Color(color) => components.push(color::display(&color, &context.shell)),
+            Token::Reset => components.push(reset::display(&context.shell)),
             Token::Component { name, mut options } => {
                 let c = match name {
                     token::Component::GitBranch => git_branch::display(&context),
@@ -57,8 +54,8 @@ pub fn components_from_tokens(
                     token::Component::GitStash => git_stash::display(&mut context),
                     token::Component::GitStatus => git_status::display(&context)?,
                     token::Component::Hostname => hostname::display(),
-                    token::Component::Jobs => jobs::display(jobs),
-                    token::Component::Cwd => cwd::display(&context, &mut options, &shell)?,
+                    token::Component::Jobs => jobs::display(context.backgrounded_jobs.as_deref()),
+                    token::Component::Cwd => cwd::display(&context, &mut options)?,
                     token::Component::User => user::display(),
                 };
 
@@ -82,17 +79,13 @@ pub fn components_from_tokens(
                 right,
             } => {
                 let result = match condition {
-                    Condition::LastCommandStatus => status == 0,
+                    Condition::LastCommandStatus => context.last_command_status == 0,
                     Condition::EnvironmentVariable(var_name) => std::env::var(var_name).is_ok(),
                 };
                 if result {
-                    components.append(&mut components_from_tokens(
-                        left, context, shell, jobs, status,
-                    )?);
+                    components.append(&mut components_from_tokens(left, context)?);
                 } else if let Some(right) = right {
-                    components.append(&mut components_from_tokens(
-                        right, context, shell, jobs, status,
-                    )?);
+                    components.append(&mut components_from_tokens(right, context)?);
                 }
             }
         };
@@ -211,6 +204,7 @@ fn should_keep_group(group: &Vec<Option<Component>>) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::Shell;
 
     #[test]
     fn test_squash_keep_1() {
@@ -346,16 +340,13 @@ mod tests {
         let mut options = HashMap::new();
         options.insert("foo".to_string(), "bar".to_string());
 
-        let mut context = Context::default();
+        let mut context = Context::new(Shell::Zsh, 0, None);
         let result = components_from_tokens(
             vec![Token::Component {
                 name: token::Component::Jobs,
                 options,
             }],
             &mut context,
-            &Shell::Zsh,
-            None,
-            0,
         );
 
         assert_eq!(
