@@ -72,7 +72,7 @@ impl std::str::FromStr for Shell {
         match input {
             "zsh" => Ok(Shell::Zsh),
             "bash" => Ok(Shell::Bash),
-            _ => Err("valid options are: bash, zsh"),
+            _ => Err("valid options are: bash, zsh\n"),
         }
     }
 }
