@@ -188,29 +188,22 @@ fn should_keep_group(group: &Vec<Option<Component>>) -> bool {
     //  |   ` Static
     //  ` Color
     let group_contains_only_static_or_color_or_color_reset = group.iter().all(|c| match c {
-        Some(c) => match c {
-            // Check for Color, ColorReset, or Static
-            Component::Color(_) | Component::ColorReset(_) | Component::Static(_) => true,
-            Component::Computed(_) => false,
-        },
-        None => false,
+        Some(Component::Color(_)) | Some(Component::ColorReset(_)) | Some(Component::Static(_)) => {
+            true
+        }
+        _ => false,
     });
 
-    // However, if the group also contains a None value, we want to run the filter.
+    // If the group contains at least one computer value we want to keep it:
     //
     // {red}+{git_stash}{reset}
     //      ^ ^
     //      | `None -- git_stash returned a None
     //      ` Static
-    let group_contains_a_computed_value = group
-        .iter()
-        .filter_map(|c| c.as_ref()) // Filter our None
-        .any(|c| match c {
-            // We don't want to count Color, ColorReset, or Static as we don't consider them "values"
-            Component::Color(_) | Component::ColorReset(_) | Component::Static(_) => false,
-            // Everything else is a "value"
-            Component::Computed(_) => true,
-        });
+    let group_contains_a_computed_value = group.iter().any(|c| match c {
+        Some(Component::Computed(_)) => true,
+        _ => false,
+    });
 
     group_contains_only_static_or_color_or_color_reset || group_contains_a_computed_value
 }
