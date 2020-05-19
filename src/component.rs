@@ -174,14 +174,13 @@ fn into_groups(components: Vec<Option<Component>>) -> Vec<Vec<Option<Component>>
 pub fn squash(components: Vec<Option<Component>>) -> Vec<Component> {
     into_groups(components)
         .into_iter()
-        .filter(|g| !filter(&g))
+        .filter(|g| should_keep_group(&g))
         .flatten()
         .filter_map(|c| c)
         .collect()
 }
 
-// TODO: Rename should_keep_group
-fn filter(group: &Vec<Option<Component>>) -> bool {
+fn should_keep_group(group: &Vec<Option<Component>>) -> bool {
     // Groups with just a Static and or Color/ColorReset should be kept:
     //
     // {red}>{reset}
@@ -189,16 +188,13 @@ fn filter(group: &Vec<Option<Component>>) -> bool {
     //  |   ` Static
     //  ` Color
     let group_contains_only_static_or_color_or_color_reset = group.iter().all(|c| match c {
-        // Check for Color, ColorReset, or Static
-        Some(Component::Static(_)) | Some(Component::Color(_)) | Some(Component::ColorReset(_)) => {
-            true
-        }
-        _ => false,
+        Some(c) => match c {
+            // Check for Color, ColorReset, or Static
+            Component::Color(_) | Component::ColorReset(_) | Component::Static(_) => true,
+            Component::Computed(_) => false,
+        },
+        None => false,
     });
-
-    if group_contains_only_static_or_color_or_color_reset {
-        return false;
-    }
 
     // However, if the group also contains a None value, we want to run the filter.
     //
@@ -206,18 +202,17 @@ fn filter(group: &Vec<Option<Component>>) -> bool {
     //      ^ ^
     //      | `None -- git_stash returned a None
     //      ` Static
-    let group_contains_no_value = !group.iter().any(|c| match c {
-        // We don't want to count Color, ColorReset, or Static as we don't consider them "values"
-        Some(Component::Color(_)) | Some(Component::ColorReset(_)) | Some(Component::Static(_)) => {
-            false
-        }
-        // Everything else is a "value"
-        Some(Component::Computed(_)) => true,
-        // Except None
-        None => false,
-    });
+    let group_contains_a_computed_value = group
+        .iter()
+        .filter_map(|c| c.as_ref()) // Filter our None
+        .any(|c| match c {
+            // We don't want to count Color, ColorReset, or Static as we don't consider them "values"
+            Component::Color(_) | Component::ColorReset(_) | Component::Static(_) => false,
+            // Everything else is a "value"
+            Component::Computed(_) => true,
+        });
 
-    group_contains_no_value
+    group_contains_only_static_or_color_or_color_reset || group_contains_a_computed_value
 }
 
 #[cfg(test)]
@@ -289,7 +284,7 @@ mod tests {
     #[test]
     fn test_filter_just_static() {
         let group = vec![Some(Component::Static("a keep".to_string()))];
-        assert!(!filter(&group));
+        assert!(should_keep_group(&group));
     }
 
     #[test]
@@ -299,7 +294,7 @@ mod tests {
             Some(Component::Static("a keep".to_string())),
             Some(Component::ColorReset("reset".to_string())),
         ];
-        assert!(!filter(&group));
+        assert!(should_keep_group(&group));
     }
 
     #[test]
@@ -308,7 +303,7 @@ mod tests {
             Some(Component::Static("a keep".to_string())),
             Some(Component::Computed("b keep".to_string())),
         ];
-        assert!(!filter(&group));
+        assert!(should_keep_group(&group));
     }
 
     #[test]
@@ -319,13 +314,13 @@ mod tests {
             Some(Component::Computed("b keep".to_string())),
             Some(Component::ColorReset("reset".to_string())),
         ];
-        assert!(!filter(&group));
+        assert!(should_keep_group(&group));
     }
 
     #[test]
     fn test_filter_static_and_empty() {
         let group = vec![Some(Component::Static("a keep".to_string())), None];
-        assert!(filter(&group));
+        assert!(!should_keep_group(&group));
     }
 
     #[test]
@@ -336,7 +331,7 @@ mod tests {
             None,
             Some(Component::ColorReset("reset".to_string())),
         ];
-        assert!(filter(&group));
+        assert!(!should_keep_group(&group));
     }
 
     #[test]
@@ -348,7 +343,7 @@ mod tests {
             None,
             Some(Component::ColorReset("reset".to_string())),
         ];
-        assert!(!filter(&group));
+        assert!(should_keep_group(&group));
     }
 
     #[test]
