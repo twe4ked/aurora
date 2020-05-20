@@ -43,6 +43,21 @@ Produces:
 
 - `{cwd}`, `{cwd style=short underline_repo=true}`, `{cwd style=long}`, `{cwd style=default}`
 - `{env name=HOME}`
+
+    A Zsh example of using a precommand to populate an environment variable with
+    a custom string. This can be used to put anything in your prompt.
+
+    ```
+    my_date_precmd() {
+        export MY_DATE="$(date)"
+    }
+
+    autoload -U add-zsh-hook
+    add-zsh-hook precmd my_date_precmd
+
+    eval "$(aurora_prompt init zsh "{env name=MY_DATE}")"
+    ```
+
 - `{git_branch}`
 - `{git_commit}`
 - `{git_stash}`
