@@ -4,38 +4,43 @@ A shell prompt for Bash and Zsh.
 
 ## Examples
 
-```sh
-eval "$(prompt init zsh)"
-```
-
-Produces:
+The default prompt:
 
 ```
+# Put this line in your shell config
+eval "$(aurora_prompt init zsh)"
+
+# ... or for Bash
+eval "$(aurora_prompt init bash)"
+
+# The following prompt will be set up:
 ~/Dev/github/twe4ked/prompt master $
 ```
 
-```sh
-eval "$(prompt init bash "{cwd=short} $ ")"
-```
-
-Produces:
+A custom prompt displaying the current working directory and a `$` symbol:
 
 ```
+# For Bash
+eval "$(aurora_prompt init bash "{cwd=short} $ ")"
+
+# The following prompt will be set up:
 ~/D/g/t/prompt $
 ```
 
-```sh
-eval "$(prompt init "\
-{green}{cwd style=short}\
-{yellow} ± {git_branch}:{git_commit}{reset}\
-{dark_grey} {git_stash}{reset}\
-{dark_grey} {jobs}{reset}\
-{cyan} $ {reset}")"
-```
-
-Produces:
+A more complex example:
 
 ```
+# For Zsh
+eval "$(aurora_prompt init zsh "\
+{green}{cwd style=short underline_repo=true}\
+{yellow} ± {git_branch}{git_status}:{git_commit}\
+{dark_grey} {git_stash}\
+{dark_grey} {jobs}\
+{if last_command_status}{cyan} $ \
+{else}{red} $ \
+{end}{reset}")"
+
+# Produces
 ~/D/g/t/prompt ± master:bacd2a3 1+ $
 ```
 
