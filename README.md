@@ -47,7 +47,7 @@ Produces:
     A Zsh example of using a precommand to populate an environment variable with
     a custom string. This can be used to put anything in your prompt.
 
-    ```
+    ```zsh
     my_date_precmd() {
         export MY_DATE="$(date)"
     }
