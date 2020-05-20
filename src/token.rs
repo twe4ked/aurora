@@ -68,6 +68,7 @@ impl TryFrom<&str> for Condition {
 #[derive(Debug, PartialEq)]
 pub enum Component {
     Cwd,
+    Env,
     GitBranch,
     GitCommit,
     GitStash,
@@ -83,6 +84,7 @@ impl TryFrom<&str> for Component {
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         match value {
             "cwd" => Ok(Component::Cwd),
+            "env" => Ok(Component::Env),
             "git_branch" => Ok(Component::GitBranch),
             "git_commit" => Ok(Component::GitCommit),
             "git_stash" => Ok(Component::GitStash),

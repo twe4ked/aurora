@@ -42,6 +42,7 @@ Produces:
 ## Components
 
 - `{cwd}`, `{cwd style=short underline_repo=true}`, `{cwd style=long}`, `{cwd style=default}`
+- `{env name=HOME}`
 - `{git_branch}`
 - `{git_commit}`
 - `{git_stash}`

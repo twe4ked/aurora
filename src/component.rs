@@ -8,6 +8,7 @@ use crate::Context;
 
 pub mod color;
 pub mod cwd;
+pub mod env;
 pub mod git_branch;
 pub mod git_commit;
 pub mod git_stash;
@@ -56,6 +57,7 @@ pub fn components_from_tokens(
                     token::Component::Hostname => hostname::display(),
                     token::Component::Jobs => jobs::display(context.backgrounded_jobs.as_deref()),
                     token::Component::Cwd => cwd::display(&context, &mut options)?,
+                    token::Component::Env => env::display(&mut options)?,
                     token::Component::User => user::display(),
                 };
 
