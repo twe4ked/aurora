@@ -1,10 +1,9 @@
 use crate::component::Component;
-use crate::utility::wrap_no_change_cursor_position;
+use crate::style;
 use crate::Context;
 use crate::Shell;
 
 use anyhow::Result;
-use crossterm::style::Attribute;
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -97,9 +96,9 @@ fn short(
                 if underline_repo {
                     format!(
                         "{}{}{}",
-                        wrap_no_change_cursor_position(Attribute::Underlined, shell),
+                        style::Style::Underlined(*shell),
                         part,
-                        wrap_no_change_cursor_position(Attribute::NoUnderline, shell)
+                        style::Style::NoUnderline(*shell),
                     )
                 } else {
                     part.to_owned()
