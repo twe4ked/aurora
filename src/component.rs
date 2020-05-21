@@ -3,10 +3,10 @@ use anyhow::Result;
 use std::collections::HashMap;
 use std::fmt;
 
+use crate::style::Style;
 use crate::token::{self, Condition, Token};
 use crate::Context;
 
-mod color;
 mod cwd;
 mod env;
 mod git_branch;
@@ -15,7 +15,6 @@ mod git_stash;
 mod git_status;
 mod hostname;
 mod jobs;
-mod reset;
 mod user;
 
 #[derive(Debug, PartialEq)]
@@ -54,12 +53,12 @@ fn components_from_tokens(
     for token in tokens.into_iter() {
         match token {
             Token::Static(s) => components.push(Some(Component::Static(s))),
-            Token::Color(color) => {
-                components.push(color::display(&color, &context.shell).map(Component::Color))
-            }
-            Token::Reset => {
-                components.push(reset::display(&context.shell).map(Component::ColorReset))
-            }
+            Token::Color(color) => components.push(Some(Component::Color(
+                Style::from_color_token(&color, &context.shell).to_string(),
+            ))),
+            Token::Reset => components.push(Some(Component::ColorReset(
+                Style::Reset(&context.shell).to_string(),
+            ))),
             Token::Component { name, mut options } => {
                 let c = match name {
                     token::Component::GitBranch => git_branch::display(&context),
