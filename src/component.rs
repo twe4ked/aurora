@@ -187,7 +187,7 @@ fn squash(components: Vec<Option<Component>>) -> Vec<Component> {
         .collect()
 }
 
-fn should_keep_group(group: &Vec<Option<Component>>) -> bool {
+fn should_keep_group(group: &[Option<Component>]) -> bool {
     // Groups with just a Static and or Color/ColorReset should be kept:
     //
     // {red}>{reset}
