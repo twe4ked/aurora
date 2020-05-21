@@ -60,6 +60,9 @@ fn components_from_tokens(
                 Style::Reset(&context.shell).to_string(),
             ))),
             Token::Component { name, mut options } => {
+                // Components should return Err when they encounter bad options, in other cases
+                // they should log their errors and return None, this way the prompt can always be
+                // rendered unless it's been incorrectly configured.
                 let c = match name {
                     token::Component::GitBranch => git_branch::display(&context),
                     token::Component::GitCommit => git_commit::display(&context),
