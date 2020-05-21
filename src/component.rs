@@ -6,17 +6,17 @@ use std::fmt;
 use crate::token::{self, Condition, Token};
 use crate::Context;
 
-pub mod color;
-pub mod cwd;
-pub mod env;
-pub mod git_branch;
-pub mod git_commit;
-pub mod git_stash;
-pub mod git_status;
-pub mod hostname;
-pub mod jobs;
-pub mod reset;
-pub mod user;
+mod color;
+mod cwd;
+mod env;
+mod git_branch;
+mod git_commit;
+mod git_stash;
+mod git_status;
+mod hostname;
+mod jobs;
+mod reset;
+mod user;
 
 #[derive(Debug, PartialEq)]
 enum Component {
