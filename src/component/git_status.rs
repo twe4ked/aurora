@@ -1,4 +1,3 @@
-use crate::component::Component;
 use crate::Context;
 use anyhow::Result;
 use git2::{Status, StatusEntry};
@@ -7,7 +6,7 @@ use git2::{Status, StatusEntry};
 // * File modified in the working tree
 // - File deleted from the working tree
 // ^ A change is staged
-pub fn display(context: &Context) -> Result<Option<Component>> {
+pub fn display(context: &Context) -> Result<Option<String>> {
     if let Some(repo_status) = repo_status(context)? {
         let mut output = String::new();
 
@@ -34,7 +33,7 @@ pub fn display(context: &Context) -> Result<Option<Component>> {
         }
 
         if !output.is_empty() {
-            return Ok(Some(Component::Computed(output)));
+            return Ok(Some(output));
         }
     }
     Ok(None)

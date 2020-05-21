@@ -45,9 +45,13 @@ pub fn components_from_tokens(
 
     for token in tokens.into_iter() {
         match token {
-            Token::Static(s) => components.push(Some(Component::Static(s.to_string()))),
-            Token::Color(color) => components.push(color::display(&color, &context.shell)),
-            Token::Reset => components.push(reset::display(&context.shell)),
+            Token::Static(s) => components.push(Some(Component::Static(s))),
+            Token::Color(color) => {
+                components.push(color::display(&color, &context.shell).map(Component::Color))
+            }
+            Token::Reset => {
+                components.push(reset::display(&context.shell).map(Component::ColorReset))
+            }
             Token::Component { name, mut options } => {
                 let c = match name {
                     token::Component::GitBranch => git_branch::display(&context),
@@ -73,7 +77,7 @@ pub fn components_from_tokens(
                     return Err(anyhow::anyhow!("error: invalid options: {}", options));
                 }
 
-                components.push(c);
+                components.push(c.map(Component::Computed));
             }
             Token::Conditional {
                 condition,

@@ -1,16 +1,15 @@
-use crate::component::Component;
 use crate::Context;
 
 use git2::Repository;
 
-pub fn display(context: &mut Context) -> Option<Component> {
+pub fn display(context: &mut Context) -> Option<String> {
     let repository = context.git_repository_mut()?;
     let count = stash_count(repository)?;
 
     if count == 0 {
         None
     } else {
-        Some(Component::Computed(format!("{}+", count)))
+        Some(format!("{}+", count))
     }
 }
 

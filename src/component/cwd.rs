@@ -1,4 +1,3 @@
-use crate::component::Component;
 use crate::style;
 use crate::Context;
 use crate::Shell;
@@ -44,7 +43,7 @@ fn extract_options(options: &mut HashMap<String, String>) -> Result<Style> {
 pub fn display(
     context: &Context,
     mut options: &mut HashMap<String, String>,
-) -> Result<Option<Component>> {
+) -> Result<Option<String>> {
     let style = extract_options(&mut options)?;
 
     let output = match style {
@@ -59,7 +58,7 @@ pub fn display(
         Style::Long => long(context.current_dir()),
     };
 
-    Ok(Some(Component::Computed(output)))
+    Ok(Some(output))
 }
 
 /// Replace the home directory portion of the path with "~/"
