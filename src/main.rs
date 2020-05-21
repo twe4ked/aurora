@@ -31,17 +31,6 @@ pub struct Run {
     status: usize,
 }
 
-impl Run {
-    fn jobs(&self) -> Option<String> {
-        // https://github.com/clap-rs/clap/issues/1740
-        if self.jobs.is_empty() || self.jobs == "__empty__" {
-            None
-        } else {
-            Some(self.jobs.to_string())
-        }
-    }
-}
-
 #[derive(Debug, Clap)]
 struct Init {
     #[clap(name = "shell")]
@@ -80,15 +69,19 @@ fn init(options: Init) -> Result<()> {
 }
 
 fn run(options: Run) -> Result<()> {
-    let components = aurora_prompt::components(
-        &options.config,
-        options.shell,
-        options.jobs(),
-        options.status,
-    )?;
+    #[rustfmt::skip]
+    let Run { config, shell, jobs, status } = options;
 
-    for component in components {
+    // https://github.com/clap-rs/clap/issues/1740
+    let jobs = if jobs.is_empty() || jobs == "__empty__" {
+        None
+    } else {
+        Some(jobs)
+    };
+
+    for component in aurora_prompt::components(&config, shell, jobs, status)? {
         print!("{}", component);
     }
+
     Ok(())
 }

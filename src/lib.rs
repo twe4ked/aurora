@@ -58,8 +58,7 @@ impl Context {
     }
 }
 
-// TODO: Remove Copy/Clone
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug)]
 pub enum Shell {
     Zsh,
     Bash,
