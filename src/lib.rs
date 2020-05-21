@@ -1,5 +1,4 @@
 mod component;
-mod error;
 mod parser;
 mod style;
 mod token;
