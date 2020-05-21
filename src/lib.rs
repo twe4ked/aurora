@@ -81,13 +81,11 @@ pub fn components(
     shell: Shell,
     jobs: Option<String>,
     status: usize,
-) -> Result<Vec<component::Component>> {
+) -> Result<Vec<String>> {
     let tokens = parser::parse(config)?;
 
     let mut context = Context::new(shell, status, jobs);
-
-    let components = component::components_from_tokens(tokens, &mut context)?;
-    let components = component::squash(components);
+    let components = component::components(tokens, &mut context)?;
 
     Ok(components)
 }

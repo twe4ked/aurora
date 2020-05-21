@@ -19,7 +19,7 @@ pub mod reset;
 pub mod user;
 
 #[derive(Debug, PartialEq)]
-pub enum Component {
+enum Component {
     Static(String),
     Color(String),
     ColorReset(String),
@@ -37,7 +37,15 @@ impl fmt::Display for Component {
     }
 }
 
-pub fn components_from_tokens(
+pub fn components(tokens: Vec<Token>, mut context: &mut Context) -> Result<Vec<String>> {
+    let components = components_from_tokens(tokens, &mut context)?;
+    let components = squash(components);
+    let components = components.iter().map(|c| c.to_string()).collect();
+
+    Ok(components)
+}
+
+fn components_from_tokens(
     tokens: Vec<Token>,
     mut context: &mut Context,
 ) -> Result<Vec<Option<Component>>> {
@@ -170,7 +178,7 @@ fn into_groups(components: Vec<Option<Component>>) -> Vec<Vec<Option<Component>>
     groups.groups()
 }
 
-pub fn squash(components: Vec<Option<Component>>) -> Vec<Component> {
+fn squash(components: Vec<Option<Component>>) -> Vec<Component> {
     into_groups(components)
         .into_iter()
         .filter(|g| should_keep_group(&g))
