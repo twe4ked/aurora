@@ -96,9 +96,9 @@ fn short(
                 if underline_repo {
                     format!(
                         "{}{}{}",
-                        style::Style::Underlined(*shell),
+                        style::Style::Underlined(shell),
                         part,
-                        style::Style::NoUnderline(*shell),
+                        style::Style::NoUnderline(shell),
                     )
                 } else {
                     part.to_owned()

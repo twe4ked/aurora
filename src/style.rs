@@ -5,15 +5,15 @@ use crate::Shell;
 
 use std::fmt;
 
-pub enum Style {
-    Color(Shell, CrosstermColor),
-    Reset(Shell),
-    Underlined(Shell),
-    NoUnderline(Shell),
+pub enum Style<'a> {
+    Color(&'a Shell, CrosstermColor),
+    Reset(&'a Shell),
+    Underlined(&'a Shell),
+    NoUnderline(&'a Shell),
 }
 
-impl Style {
-    pub fn from_color_token(color: &Color, shell: &Shell) -> Self {
+impl<'a> Style<'a> {
+    pub fn from_color_token(color: &Color, shell: &'a Shell) -> Self {
         let color = match color {
             Color::Black => CrosstermColor::Black,
             Color::DarkGrey => CrosstermColor::DarkGrey,
@@ -32,11 +32,11 @@ impl Style {
             Color::White => CrosstermColor::White,
         };
 
-        Style::Color(*shell, color)
+        Style::Color(shell, color)
     }
 }
 
-impl fmt::Display for Style {
+impl fmt::Display for Style<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Style::Color(shell, color) => write(f, *shell, SetForegroundColor(*color)),
@@ -49,7 +49,7 @@ impl fmt::Display for Style {
 
 // Include a string as a literal escape sequence. The string within the braces should not change
 // the cursor position. Brace pairs can nest.
-fn write<T>(f: &mut fmt::Formatter<'_>, shell: Shell, style: T) -> fmt::Result
+fn write<T>(f: &mut fmt::Formatter<'_>, shell: &Shell, style: T) -> fmt::Result
 where
     T: fmt::Display,
 {
