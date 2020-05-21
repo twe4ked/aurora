@@ -21,11 +21,11 @@ enum SubCommand {
 
 #[derive(Debug, Clap)]
 pub struct Run {
-    #[clap(short, long)]
+    #[clap(long)]
     jobs: String,
-    #[clap(short, long)]
+    #[clap(long)]
     shell: Shell,
-    #[clap(short, long, default_value = DEFAULT_CONFIG)]
+    #[clap(long, default_value = DEFAULT_CONFIG)]
     config: String,
     #[clap(long)]
     status: usize,
