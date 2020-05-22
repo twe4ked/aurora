@@ -40,6 +40,42 @@ fn extract_options(options: &mut HashMap<String, String>) -> Result<Style> {
     }
 }
 
+// Displays the current working directory.
+//
+// Options:
+//
+// style=default
+//
+// Default displays the full path with the home directory replaced with "~/"
+//
+// style=short
+//
+//      Shortens the current working directory
+//
+//      The short option has the home dir replaced and shortens every path part up to the current
+//      directory. If you're in a Git repository it won't shorten the repository root directory.
+//
+//      Examples:
+//
+//      Standard directories within home:
+//
+//          /users/admin/home                                   ->  ~
+//          /users/admin/home/a_directory                       ->  ~/some_directory
+//          /users/admin/home/a_directory/other                 ->  ~/s/other
+//
+//      Repositories within home:
+//
+//          /users/admin/home/a_repo                            ->  ~/s/a_repo
+//          /users/admin/home/a_repo/other                      ->  ~/s/a_repo/other
+//          /users/admin/home/a_repo/other/new                  ->  ~/s/a_repo/o/new
+//
+//      A deeply nested repository from the root:
+//
+//          /repos/personal/aurora_prompt/src/components/cwd    ->  /r/p/aurora_prompt/s/c/cwd
+//
+// style=long
+//
+// Outputs the full path unmodified.
 pub fn display(
     context: &Context,
     mut options: &mut HashMap<String, String>,
@@ -61,7 +97,6 @@ pub fn display(
     Ok(Some(output))
 }
 
-/// Replace the home directory portion of the path with "~/"
 fn replace_home_dir(current_dir: &PathBuf, home_dir: &PathBuf) -> String {
     format!("{}", current_dir.display()).replacen(&format!("{}", home_dir.display()), "~", 1)
 }
@@ -104,6 +139,9 @@ fn short(
             } else {
                 // Truncate everything else
                 let p = part.get(0..1).unwrap_or("");
+                // If the path starts with a ".", let's grab the first two characters.
+                //
+                // Eg. ~/.config/shell -> ~/.c/shell
                 if p == "." {
                     part.get(0..2).unwrap_or(p).to_string()
                 } else {
