@@ -91,20 +91,18 @@ fn short(
         .enumerate()
         .map(|(i, part)| {
             if git_path_length.map(|l| i == l - 1).unwrap_or(false) {
-                // Don't truncate the repository or the final dir
+                // Don't truncate the repository
                 if underline_repo {
-                    format!(
-                        "{}{}{}",
-                        style::Style::Underlined(shell),
-                        part,
-                        style::Style::NoUnderline(shell),
-                    )
+                    use style::Style::{NoUnderline, Underlined};
+                    format!("{}{}{}", Underlined(shell), part, NoUnderline(shell))
                 } else {
                     part.to_owned()
                 }
             } else if i == full_path_length - 1 {
+                // Or the final dir
                 part.to_owned()
             } else {
+                // Truncate everything else
                 let p = part.get(0..1).unwrap_or("");
                 if p == "." {
                     part.get(0..2).unwrap_or(p).to_string()
