@@ -77,14 +77,14 @@ Colors are also used to define groups, if all components within a color group
 return nothing, the entire group will be squashed. Groups are defined as
 everything between a color and a `{reset}`.
 
-- `{black}`, `{dark_grey}`
+- `{black}`, `{white}`
+- `{grey}`, `{dark_grey}`
 - `{blue}`, `{dark_blue}`
 - `{green}`, `{dark_green}`
 - `{red}`, `{dark_red}`
 - `{cyan}`, `{dark_cyan}`
 - `{magenta}`, `{dark_magenta}`
 - `{yellow}`, `{dark_yellow}`
-- `{white}`
 
 ### Reset
 

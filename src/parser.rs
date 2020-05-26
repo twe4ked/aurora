@@ -1,5 +1,6 @@
-use crate::token::{Color, Component, Condition, Token};
+use crate::token::{Component, Condition, Token};
 use anyhow::Result;
+use crossterm::style::Color;
 use nom::branch::alt;
 use nom::bytes::complete::tag;
 use nom::character::complete::{alpha1, multispace0, none_of, one_of};
@@ -47,12 +48,26 @@ fn start_identifier_end(input: &str) -> IResult<&str, &str> {
     terminated(preceded(start_tag, identifier), end_tag)(input)
 }
 
-fn color_internal(input: &str) -> IResult<&str, Color> {
-    map_res(start_identifier_end, Color::try_from)(input)
+fn parse_color(input: &str) -> Result<Color, ()> {
+    let color = input
+        .parse::<Color>()
+        .expect("Color::from_str() does not return error");
+
+    match color {
+        // For unknown values from_str() returns Color::White
+        c @ Color::White => {
+            if input.to_lowercase() == "white" {
+                Ok(c)
+            } else {
+                Err(())
+            }
+        }
+        c => Ok(c),
+    }
 }
 
 fn color(input: &str) -> IResult<&str, Token> {
-    map(color_internal, Token::Color)(input)
+    map(map_res(start_identifier_end, parse_color), Token::Color)(input)
 }
 
 fn reset(input: &str) -> IResult<&str, Token> {
@@ -372,5 +387,23 @@ mod tests {
         assert_eq!(subject(&"$TEST").unwrap(), ("", "TEST"));
         assert_eq!(subject(&"$FOO_BAR").unwrap(), ("", "FOO_BAR"));
         assert_eq!(subject(&"$FOO BAR").unwrap(), (" BAR", "FOO"));
+    }
+
+    #[test]
+    fn it_parses_colors() {
+        let a = assert_result_return_tokens;
+
+        assert_eq!(a(color(&"{grey}")), Token::Color(Color::Grey));
+        assert_eq!(a(color(&"{dArk_grEy}")), Token::Color(Color::DarkGrey));
+        assert_eq!(a(color(&"{White}")), Token::Color(Color::White));
+    }
+
+    fn assert_result_return_tokens<O: std::fmt::Debug, E: std::fmt::Debug>(
+        result: Result<(&str, O), E>,
+    ) -> O {
+        assert!(result.is_ok());
+        let (input, output) = result.unwrap();
+        assert_eq!(input, "");
+        output
     }
 }

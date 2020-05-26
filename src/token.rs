@@ -3,50 +3,7 @@
 use std::collections::HashMap;
 use std::convert::TryFrom;
 
-#[derive(Debug, PartialEq)]
-pub enum Color {
-    Black,
-    DarkGrey,
-    Blue,
-    DarkBlue,
-    Green,
-    DarkGreen,
-    Red,
-    DarkRed,
-    Cyan,
-    DarkCyan,
-    Magenta,
-    DarkMagenta,
-    Yellow,
-    DarkYellow,
-    White,
-}
-
-impl TryFrom<&str> for Color {
-    type Error = ();
-
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
-        use Color::*;
-        match value {
-            "black" => Ok(Black),
-            "dark_grey" => Ok(DarkGrey),
-            "blue" => Ok(Blue),
-            "dark_blue" => Ok(DarkBlue),
-            "green" => Ok(Green),
-            "dark_green" => Ok(DarkGreen),
-            "red" => Ok(Red),
-            "dark_red" => Ok(DarkRed),
-            "cyan" => Ok(Cyan),
-            "dark_cyan" => Ok(DarkCyan),
-            "magenta" => Ok(Magenta),
-            "dark_magenta" => Ok(DarkMagenta),
-            "yellow" => Ok(Yellow),
-            "dark_yellow" => Ok(DarkYellow),
-            "white" => Ok(White),
-            _ => Err(()),
-        }
-    }
-}
+use crossterm::style::Color;
 
 #[derive(Debug, PartialEq)]
 pub enum Condition {

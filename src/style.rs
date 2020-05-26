@@ -1,12 +1,11 @@
-use crossterm::style::{Attribute, Color as CrosstermColor, ResetColor, SetForegroundColor};
+use crossterm::style::{Attribute, Color, ResetColor, SetForegroundColor};
 
-use crate::token::Color;
 use crate::Shell;
 
 use std::fmt;
 
 pub enum Style<'a> {
-    Color(&'a Shell, CrosstermColor),
+    Color(&'a Shell, Color),
     Reset(&'a Shell),
     Underlined(&'a Shell),
     NoUnderline(&'a Shell),
@@ -14,25 +13,10 @@ pub enum Style<'a> {
 
 impl<'a> Style<'a> {
     pub fn from_color_token(color: &Color, shell: &'a Shell) -> Self {
-        let color = match color {
-            Color::Black => CrosstermColor::Black,
-            Color::DarkGrey => CrosstermColor::DarkGrey,
-            Color::Blue => CrosstermColor::Blue,
-            Color::DarkBlue => CrosstermColor::DarkBlue,
-            Color::Green => CrosstermColor::Green,
-            Color::DarkGreen => CrosstermColor::DarkGreen,
-            Color::Red => CrosstermColor::Red,
-            Color::DarkRed => CrosstermColor::DarkRed,
-            Color::Cyan => CrosstermColor::Cyan,
-            Color::DarkCyan => CrosstermColor::DarkCyan,
-            Color::Magenta => CrosstermColor::Magenta,
-            Color::DarkMagenta => CrosstermColor::DarkMagenta,
-            Color::Yellow => CrosstermColor::Yellow,
-            Color::DarkYellow => CrosstermColor::DarkYellow,
-            Color::White => CrosstermColor::White,
-        };
-
-        Style::Color(shell, color)
+        match color {
+            Color::Reset | Color::Rgb { .. } => panic!("unsupported color"),
+            _ => Style::Color(shell, *color),
+        }
     }
 }
 
