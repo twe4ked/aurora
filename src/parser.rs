@@ -48,26 +48,8 @@ fn start_identifier_end(input: &str) -> IResult<&str, &str> {
     terminated(preceded(start_tag, identifier), end_tag)(input)
 }
 
-fn parse_color(input: &str) -> Result<Color, ()> {
-    let color = input
-        .parse::<Color>()
-        .expect("Color::from_str() does not return error");
-
-    match color {
-        // For unknown values from_str() returns Color::White
-        c @ Color::White => {
-            if input.to_lowercase() == "white" {
-                Ok(c)
-            } else {
-                Err(())
-            }
-        }
-        c => Ok(c),
-    }
-}
-
 fn color(input: &str) -> IResult<&str, Token> {
-    map(map_res(start_identifier_end, parse_color), Token::Color)(input)
+    map(map_res(start_identifier_end, Color::try_from), Token::Color)(input)
 }
 
 fn reset(input: &str) -> IResult<&str, Token> {
