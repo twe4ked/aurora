@@ -2,6 +2,8 @@ use crate::Context;
 use anyhow::Result;
 use git2::{Status, StatusEntry};
 
+// https://github.com/romkatv/powerlevel10k/tree/master/gitstatus
+
 // + New file added to the working tree
 // * File modified in the working tree
 // - File deleted from the working tree

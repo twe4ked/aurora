@@ -11,7 +11,10 @@ use std::path::{Path, PathBuf};
 enum Style {
     Default,
     Long,
-    Short { underline_repo: bool },
+    Short {
+        underline_repo: bool,
+        bold_repo: bool,
+    },
 }
 
 fn parse_boolean(input: String) -> Result<bool> {
@@ -31,7 +34,14 @@ fn extract_options(options: &mut HashMap<String, String>) -> Result<Style> {
                     Some(s) => parse_boolean(s)?,
                     None => false,
                 };
-                Ok(Style::Short { underline_repo })
+                let bold_repo = match options.remove("bold_repo") {
+                    Some(s) => parse_boolean(s)?,
+                    None => false,
+                };
+                Ok(Style::Short {
+                    underline_repo,
+                    bold_repo,
+                })
             }
             "long" => Ok(Style::Long),
             _ => Err(anyhow::anyhow!("error: invalid style: {}", s)),
@@ -84,11 +94,15 @@ pub fn display(
 
     let output = match style {
         Style::Default => default(context.current_dir()),
-        Style::Short { underline_repo } => short(
+        Style::Short {
+            underline_repo,
+            bold_repo,
+        } => short(
             &context.current_dir(),
             &dirs::home_dir().unwrap_or_default(),
             context.git_repository().map(|r| r.path()),
             underline_repo,
+            bold_repo,
             &context.shell,
         ),
         Style::Long => long(context.current_dir()),
@@ -110,6 +124,7 @@ fn short(
     home_dir: &PathBuf,
     git_path: Option<&Path>,
     underline_repo: bool,
+    bold_repo: bool,
     shell: &Shell,
 ) -> String {
     let git_path_length = git_path.map(|git_path| {
@@ -127,12 +142,20 @@ fn short(
         .map(|(i, part)| {
             if git_path_length.map(|l| i == l - 1).unwrap_or(false) {
                 // Don't truncate the repository
+
+                use style::Style::{Bold, NoBold, NoUnderline, Underlined};
+
+                let mut out = part.to_owned();
+
                 if underline_repo {
-                    use style::Style::{NoUnderline, Underlined};
-                    format!("{}{}{}", Underlined(shell), part, NoUnderline(shell))
-                } else {
-                    part.to_owned()
+                    out = format!("{}{}{}", Underlined(shell), out, NoUnderline(shell))
                 }
+
+                if bold_repo {
+                    out = format!("{}{}{}", Bold(shell), out, NoBold(shell))
+                }
+
+                out
             } else if i == full_path_length - 1 {
                 // Or the final dir
                 part.to_owned()

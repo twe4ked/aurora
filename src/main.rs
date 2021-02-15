@@ -56,6 +56,7 @@ fn init(options: Init) -> Result<()> {
     let script = match options.shell {
         Shell::Zsh => include_str!("init/init.zsh"),
         Shell::Bash => include_str!("init/init.bash"),
+        Shell::NoWrap => panic!("init not supported for no_wrap shell"),
     };
 
     let path = std::env::current_exe().with_context(|| "could not return path to executable")?;

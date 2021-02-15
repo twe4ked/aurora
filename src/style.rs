@@ -9,6 +9,8 @@ pub enum Style<'a> {
     Reset(&'a Shell),
     Underlined(&'a Shell),
     NoUnderline(&'a Shell),
+    Bold(&'a Shell),
+    NoBold(&'a Shell),
 }
 
 impl<'a> Style<'a> {
@@ -27,6 +29,8 @@ impl fmt::Display for Style<'_> {
             Style::Reset(shell) => write(f, *shell, ResetColor),
             Style::Underlined(shell) => write(f, *shell, Attribute::Underlined),
             Style::NoUnderline(shell) => write(f, *shell, Attribute::NoUnderline),
+            Style::Bold(shell) => write(f, *shell, Attribute::Bold),
+            Style::NoBold(shell) => write(f, *shell, Attribute::NoBold),
         }
     }
 }
@@ -42,6 +46,8 @@ where
         Shell::Zsh => write!(f, "%{{{}%}}", style),
         // /[.../]
         Shell::Bash => write!(f, "\\[{}\\]", style),
+        //   ...
+        Shell::NoWrap => write!(f, "{}", style),
     }
 }
 
